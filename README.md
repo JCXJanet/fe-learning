@@ -55,3 +55,10 @@ document.addEventListener("visibilitychange", handleVisibilityChange, false);
 
 
 在模板字符串中，空格、缩进、换行都会被保留
+
+  
+1.接口返回，统一结构
+
+2.try-catch融入
+
+3.sql本身字段
