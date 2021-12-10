@@ -403,3 +403,291 @@ JavaScript中并没有“强制优先级运算符”这个概念，这对圆括�
 
 
 4.语句
+
+```javascript
+var remoteMetaData = ajax.Get(your_url); // "2;"
+var remoteData = eval(remoteMetaData);
+
+switch(typeof remoteData) {
+    // ...
+}
+```
+
+```javascript
+str2 = 'this is a ' + (str = 'test')
+// 'this is a test'
+```
+
+赋值表达式（以及赋值语句）具有隐式声明变量的作用：一个变量（标识符）在赋值前未被声明，则脚本会首先隐式地声明该变量，然后完成赋值运算。在这种情况下，隐式声明的变量总是全局变量，因此它也被视为局部变量“泄露”到了全局。为了避免这种潜在的命名污染，在严格模式中向未声明的变量赋值是被禁止的。
+
+
+
+JavaScript中的函数本身是一个变量/值，因此函数调用其实是一个表达式
+
+非引用匿名函数的调用方法
+
+```javascript
+// “函数调用运算符()”作用于匿名函数本身
+(function() {
+  // ...
+}())
+
+// 作用于一个运算的结果值。
+(function() {
+  // ...
+})();
+
+
+// 用于调用函数并忽略其返回值。运算符void用于使其后的函数作为表达式执行。
+void function() {
+  // ...
+}()
+```
+
+
+
+声明时立即执行函数的另外写法
+
+```javascript
+void function foo() {
+  // ..
+}(1,2);
+
+x = 1 + (y => y + 2)(5) + 10
+// 18
+```
+
+
+
+```
+var str = 'test string.';
+```
+
+“var str”作为变量声明在语法解析阶段就被处理，使执行环境中有了名为str的变量；“str='test string.'”在执行阶段处理，通过赋值操作向变量名str绑定具体的值。严格来说，JavaScript中所有显式的数据声明都是按这种处理方法来实现的，包括var/let/const声明、函数声明等。
+
+
+
+let const 是因为暂时性死区
+
+当程序的控制流程在新的作用域（`module` `function` 或 `block` 作用域）进行实例化时，在此作用域中用let/const声明的变量会先在作用域中被创建出来，但因此时还未进行词法绑定，所以是不能被访问的，如果访问就会抛出错误。因此，在这运行流程进入作用域创建变量，到变量可以被访问之间的这一段时间，就称之为暂时死区。
+
+*ES6规定，`let/const` 命令会使区块形成封闭的作用域。若在声明之前使用变量，就会报错。*
+*总之，在代码块内，使用 `let` 命令声明变量之前，该变量都是不可用的。*
+*这在语法上，称为 **“暂时性死区”**（ temporal dead zone，简称 **TDZ**）。*
+
+
+
+break只能用于for、while等循环语句以及switch分支语句和标签化语句的内部，而return只能用于函数内部。
+
+
+
+JavaScript中的标签就是一个标识符。标签可以与变量重名而互不影响，因为它是另一种独立的语法元素（既不是变量，也不是类型），其作用是指示“标签化语句（labeled statement）”。而它的声明也很简单：一个标识符后面跟一个冒号“：”。可以在多数语句前面加上这样的标签以使该语句被“标签化（labeled）”，
+
+
+
+标签在语义上用于表示一个“语句/语句块”的范围
+
+
+
+在JavaScript中，标签只能被break语句与continue语句所引用。前者表明停止语句执行，并跳转到break所指示标签的范围之外；后者表明停止当前循环，并跳转到continue所指示标签的范围起点。
+
+
+
+continue
+
+它默认表明停止当前循环并跳转到下一次循环迭代开始处运行。
+
+
+
+continue后面也可以带一个标签，这时它表明从循环体内部中止，并继续到标签指示处开始执行。
+
+continue后面的标签只能对单个循环语句有意义，因此它甚至不能作用于一个包括循环的复合语句。
+
+
+
+return子句只能用在一个函数之内，且同一个函数之内允许存在多个return子句。当return子句没有指定返回值时，该函数返回undefined。
+
+最后，当执行函数的逻辑过程中没有遇到return子句时，函数将会执行到最后一条语句（函数声明末尾的大括号处），并返回undefined值。
+
+
+
+异常处理机制被分为三个部分，包括：
+
+■ 触发异常，使用throw语句可以在任意位置触发异常，或由引擎内部在执行过程中触发异常。
+
+■ 捕获异常，使用try...catch语句可以（在形式上表明）捕获一个代码块中可能发生的异常，并使用变量exception来指向该异常的一个引用。
+
+■ 结束处理，使用try...finally语句可以无视指定代码块中发生的异常，确保finally语句块中的代码总是被执行。
+
+
+
+catch(){...}块和finally{...}块都是可选的，但必须至少存在一个
+
+
+
+finally{...}语句块的一个重要之处在于它总是在try/catch块退出之前被执行。
+
+```javascript
+// 在(函数内部的)try块中使用return时，finally块中的代码仍是在return子句前执行的
+try {
+  // ...
+  return;
+}
+finally {
+  ...
+}
+  
+//在（标签化语句的）try块中使用break时，finally块中的代码仍是在break子句前执行的
+//注意，continue子句与此类似
+aLabel: 
+  try{
+    // ...
+    break aLabel;
+  }
+  finally {
+    ...
+  }
+```
+
+throw语句后“应当是”一个错误对象：Error()构造器的实例，或通过“catch（exception）”子句中捕获到的异常exception。之所以说“应当是”，是因为throw语句其实可以将任何对象/值作为异常抛出。
+
+如果throw语句位于一个finally{...}语句块中，那么在它之后的语句也不能被执行—这意味着finally{...}语句块中的代码“不一定”能被完整地执行。同样的道理，即使不是使用throw语句显式地触发异常，在finally{...}块中出现的任何执行期异常也会中止其后的代码执行。因此，对于开发者来说，应尽可能保证finally{...}语句块中的代码都能安全、无异常地执行。
+
+
+
+5.模块
+
+CommonJS与AMD分别是服务端和浏览器端模块化方案的主流选择，前者用require()载入，用exports对象导出，后者使用define()来声明模块的依赖关系，而装载过程却通常利用浏览器或应用框架的自身机制。
+
+
+
+装载模块意味着模块中的顶层代码会被执行一次，由于引擎的模块装载系统会静态扫描全部模块并确定装载的次序，所以事实上模块名在"import"语句中出现和被依赖的次序也就成了那些顶层代码得以执行的次序。显然，由于后续的模块是基于缓存的，所以它们的顶层代码不会被反复执行。
+
+
+
+所有模块的顶层代码都是顺序地、串行地执行的。
+
+```javascript
+export default 1 + 2;
+```
+
+在处理这个语句时，JavaScript在语法分析阶段只会在导出表中建立名字“default”，而这个名字与值的绑定却要等到执行阶段才会处理。这与JavaScript处理var声明的方式是类似的。
+
+
+
+聚合
+
+```javascript
+// 聚合（并导出）资源块module-name中的名字x或v
+export { x } from 'module-name';
+export { v as x } from 'module-name';
+
+// 聚合（并导出）资源块module-name中的全部名字
+export * from 'module-name';
+```
+
+最后一个，那些被聚合的名字不会重复出现在当前模块的导出表中。只是在需要引用某个名字时（例如x2），当前模块会先查找自己的导出名字中是否有x2，如果没有，则会通过一个内部登记项（称为RequestedModules）来索引那些源模块，以实现深度遍历
+
+
+
+所有的导出语句事实上都会在运行期环境初始化之前添加到导出表中，这个导出表也用于构建该模块的名字空间—二者在应对不同需求的抽象时是同一个概念。接下来，根据执行过程的需求（即其他模块的import），引擎将会初始化以及装载这个模块，在这个过程中该模块的顶层代码将会被执行。
+
+
+
+在ECMAScript中，名字空间看起来像是一个普通对象，并且也可以通过对象成员来存取那些被导出的名字。不过由于名字空间对象的原型是null，所以除了那些导出名字之外它没有任何多余的成员名。
+
+```javascript
+// 被导入模块
+export var x = 'good'
+
+// 导入名字空间
+import * as myNames from "module-name";
+
+console.log(myNames.x); // 'good'
+console.log('x' in MyNames); // true
+console.log('toString' in MyNames); // false
+console.log(Object.getPrototypeOf(myNames)); // null
+```
+
+具体的JavaScript引擎在装载主模块并开始执行第一行用户代码之前，通过语法分析就可以得出所有模块之间的导出、导入关系。
+
+在所有模块依赖关系的深度遍历结束后，JavaScript就会开始向当前模块（主模块）的执行环境添加那些import项所声明的名字，并让导出名（源模块的）与本地名字（当前模块）绑定在一起。
+
+在所有其他方式声明的（例如，使用var声明或函数声明等）名字创建之前，那些通过import导入的名字就已经被创建并绑定了值。然而自此之后，模块依赖的维护工作就结束了。也就是说，主模块根本没有自己的名字空间。
+
+
+
+不同于导入名，名字空间中的名字其实是属性名，可以像对象属性一样操作。源于名字空间本身是一个特殊对象，所以它的属性（即名字空间中的名字）也有一些特殊性。
+
+```javascript
+// 被导入模块（module-name）
+export var x = 'good';
+
+import * as myNames from 'module-name';
+
+// { Values: 'good', Writable: true, Enumerable: true, Configurable: false }
+console.log(Object.getOwnPropertyDescriptor(myNames, 'x'));
+
+// 属性描述符显示它是可写的，且名字空间（作为对象）未被冻结
+console.log(Object.getOwnPropertyDescriptor(myNames, 'x').writable); // true
+console.log(Object.isFrozen(myNames)); // false
+```
+
+但是无法修改
+
+```javascript
+// x是有值的
+console.log(x); // isn't undefined, the <x> value exported
+import x from 'module-name';
+```
+
+类似写法
+
+```javascript
+import * as myNames from 'module-name';
+
+//类似于
+import { x, y } from 'module-name';
+const { x, y } = myNames;
+```
+
+```javascript
+// 例如：被导入模块（module-name）
+export var x = 'good';
+
+// 1.导入名字空间（使用 myNames.x）
+import * as myNames from "module-name";
+
+// 2.导入名字（使用导入名x）
+import { x } from "module-name";
+
+// 3."名字空间+本地变量声明"（使用本地名字x2）
+var {x: x2} = myNames;
+
+// 测试
+console.log(x, x2, myNames.x); // good good good
+```
+
+对于方法1，参见上一小节：myNames.x是一个对象属性，但与一般对象属性的操作不同。而在方法2中，x是当前模块中的一个本地名字，它被创建为所谓的“非可变间接绑定（immutable indirect binding）”，并关联到目标模块module-name中的对应导出项。这决定了该本地名字跟常量是类似的、是不可写的。例如，当读取x时，实际发生的操作是：
+
+■ 当前模块查找到一个引用名x，并，
+
+■ 发现它绑定到了源模块（M）的导出名x。因此，
+
+■ 将会调用模块M的内部操作来返回M["x"]。
+
+因此这将得到一个来自源模块的引用，进而得到该引用的值（例如上例中的'good'）。但是如果是写x，则不会发生这么深的访问操作，因为在第一步得到当前模块中的引用名x时，就会发现这个x是一个“非可变的（immutable）”绑定，不可修改。
+
+而在使用方法3来访问x2时，由于x2是在本地声明为变量的，因此它可以写。并且，当它读的时候也只是访问本地环境中的值，而不是对源模块的引用。因为从引用中取值的操作已经在之前模板赋值时就发生过了。
+
+使用名字空间还有一个潜在的好处：如果使用import导入一个名字，而在源模块中不存在该名字，那么将导致一个异常，而访问名字空间时是不会有这种异常的。
+
+```javascript
+// 如果使用imort，则将在模块初始化阶段抛出异常
+// import { xyz } from "module-name";
+
+// 变量xyz的初值将被置为undefined
+var { xyz } = myNames;
+```
+
+由于模块总是运行在严格模式中，所以用户代码没有办法动态地在模块顶层的名字空间中创建一个新名字或标识符。也就是说，你既没有办法增删myNames的属性表，也不能在"module-name"模块中使用eval来动态地创建一个名字。
