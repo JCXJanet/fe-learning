@@ -733,3 +733,395 @@ arguments或eval也不能使用delete去删除
 每个左侧标识符名的解析会在执行期再发生一次，在语法分析阶段解析它们的语法有效性。
 
 ### JavaScript的面向对象语言特性
+
+当Array()的参数只有一个并且是数值类型时（typeof的值为'number'），使用new运算创建出来的会是一个用该数值指定元素个数的数组—其每个元素都是undefined值。
+
+所有数组都是可迭代对象，但类数组对象却不一定可迭代；反过来说，可迭代对象也不一定都是数组。
+
+
+
+```javascript
+class MyObjectEx extends MyObject {
+  ...
+}
+  
+// 与如下效果类似
+MyObjectEx.prototype = new MyObject();
+MyObjectEx.prototype.constructor = MyObjectEx;
+```
+
+由class关键字引导的整个类声明（包括类表达式）代码块总是工作在严格模式中。这意味着extends声明也同样处在严格模式下。用extends声明的parentClass是一个表达式（的结果值），因此这事实上是说，该表达式将运行在严格模式中。
+
+```javascript
+class MyObjectEx extends MyObject {
+  constructor() {
+    super(x, y)
+  }
+}
+
+// 与如下效果相似
+function MyObjectEx() {
+  // super(x, y) 将实现为类似代码
+  MyObject.apply(this, [x, y]);
+}
+MyObjectEx.prototype = new MyObject();
+MyObjectEx.prototype.constructor = MyObjectEx;
+```
+
+注意在使用this之前，总是需要先显式地调用super()以便在当前构造方法中获得this实例。
+
+不过如果没有extends，那么不调用super也是可以的。
+
+**调用父类方法**
+
+```javascript
+// 声明基类上的foo()方法
+class MyObject {
+  foo(x) {
+    ...
+  }
+}
+  
+// 使用继承
+class MyObjectEx extends MyObject {
+  foo(x, y) {
+    super.foo(x); // <- 调用父类同名方法
+  }
+  
+  bar(x, y) {
+    super.foo(x); // <- 调用父类方法
+  }
+}
+
+var obj = new MyObjectEx();
+obj.foo(100, 200);
+```
+
+在使用super.XXX调用父类方法时也会隐式地传入当前的this引用，这与在构造器中调用super()时是一致的。
+
+**类成员（类静态成员）**
+
+在使用super.XXX调用父类方法时也会隐式地传入当前的this引用，这与在构造器中调用super()时是一致的。
+
+```javascript
+// 声明类的静态方法和属性
+class MyObject {
+  static get aName() {
+    return 10
+  }
+  
+  static foo() {
+    console.log(super.toString());
+  }
+}
+
+class MyObjectEx extends MyObject {}
+```
+
+访问类静态成员时并不需要创建对象实例，因为它是类自有的成员。
+
+只是在其中调用super()或super.XXX()时，this会绑定到类（构造器函数）本身—因为这种情况下并没有创建对象实例。
+
+对象成员有三种性质，称为属性的可读写（writable）、可列举（enumerable）和可重置（configurable）性质。
+
+对象成员可以是自有的（own properties），也可以是继承的（inheritedproperties）。所谓继承的，是指对象的父类或祖先类原型（即该对象的原型链上）具有该成员；子类对象可以用相同名字重新声明该成员，这称为覆盖（override）或重写（overwrite）。
+
+JavaScript对象的某些特定成员被设置为隐藏的，因而不能被列举
+
+在这种情况下，可以用“in”运算检测到该成员，但不能用“for...in”语句来列举它。
+
+propertyIsEnumerable()该方法是不检测对象的原型链的，即对象继承来的成员不能被列举。
+
+| 键名     | 成员         | 语法                           | 含义                         | 备注 |
+| -------- | ------------ | ------------------------------ | ---------------------------- | ---- |
+| 一般键名 | 仅显式成员   | for...in                       | 可列举的成员名(含原型链)     |      |
+| 一般键名 | 仅显式成员   | Object.keys()                  | 可列举的、非符号的自有属性名 |      |
+| 一般键名 | 仅显式成员   | Object.values()                | 可列举的、非符号的自有属性名 |      |
+| 一般键名 | 仅显式成员   | Object.entries()               | 可列举的、非符号的自有属性名 |      |
+| 一般键名 | 包含隐式成员 | Object.getOwnPropertyNames()   | 全部的、非符号的自有属性名   |      |
+| 符号键名 | 包含隐式成员 | Object.getOwnPropertySymbols() | 全部的、符号键名的自有属性名 |      |
+
+```javascript
+// Object.values(obj)
+Object.keys(obj).map(key => obj[key])
+
+// Object.entries(obj)
+Object.keys(obj).map(key => [key, obj[key]])
+```
+
+在Web浏览器中，DOM的约定是“如果一个属性没有初值，则应该将其置为null”。
+
+“.”和“[]”都是对象成员存取运算符，所不同的是：前者右边的操作数必须是一个标识符，后者在方括号中的操作数可以是变量、标识符、符号、字面量或表达式。
+
+无论是声明成员，还是取它的值，都可以在“[]”运算符中使用可计算的成员名，即使用表达式来作为成员名
+
+```javascript
+var nameLeft = 'abcd', nameRight= 'def'
+
+console.log(obj[nameLeft + '.' + nameRight])
+console.log(obj[[nameLeft, nameRight].join('.')])
+```
+
+成员的删除
+
+```javascript
+function MyObject() {
+  // ...
+}
+
+// 在原型中声明属性
+MyObject.prototype.value = 100;
+
+// 创建实例
+var obj1 = new MyObject();
+var obj2 = new MyObject();
+
+// 下面的代码并不会使obj1.value被删除
+delete obj1.value;
+console.log(obj1.value);
+
+// 下面的代码可以删除obj1.value，但是，由于是对原型进行操作会使obj2.value也被删除
+delete obj1.constructor.prototype.value;
+console.log(obj1.value);
+console.log(obj2.value);
+```
+
+不过该运算符不能用于删除：
+
+■ 用var/let/const声明的变量与常量。
+
+■ 直接继承自原型的成员。
+
+其中，关于delete不能删除“继承自原型的成员”有一点例外：如果修改了这个成员的值，仍然可以删除它（并使它恢复到原型的值）。
+
+JavaScript的一些官方文档中提及，delete仅在删除一个不能删除的成员时，才会返回false；在其他情况下（例如删除不存在的成员，或者删除继承自父类/原型的成员），即使删除不成功也会返回true。
+
+
+
+使用for...in语句是不能列举符号属性的，并且Object.keys()也不能用来列举符号属性。唯一能有效列举符号属性的方法是Object.getOwnPropertySymbols()。
+
+尽管符号属性也有可读写、可列举和可重置等性质，但是因为for...in语句并不列举符号属性，所以—事实上—也没有必要去隐藏它们，例如设置enumerable为false。并且无论如何，Object.getOwnPropertySymbols()总是可以取得一个对象全部的、自有的符号属性列表。
+
+| 符号               | 影响的语法元素或对象行为    | 类型     |
+| ------------------ | --------------------------- | -------- |
+| Symbol.hasInstance | object instanced Class      | function |
+| Symbol.iterator    | for...of                    | function |
+| Symbol.unscopables | with(object) {...}          | object   |
+| Symbol.toPrimitive | Object.prototype.valueOf()  | function |
+| Symbol.toStringTag | Object.prototype.toString() | string   |
+
+```javascript
+var str = new String('hi');
+console.log(str);
+
+str[Symbol.toPrimitive] = () => 1;
+console.log(100 + str); // 101
+
+class MyString extends String {
+  static [Symbol.hasInstance]() {return false}
+}
+console.log(new MyString instanceof MyString); // false
+
+Object.defineProperty(String, Symbol.hasInstance, {value: () => false});
+console.log(new String instanceof String); // false
+```
+
+然而使用符号作为属性名时，就必须导出标识符symbolPropName以访问对应的属性。
+
+JavaScript确保即使用用户代码在多个地方调用了Symbol.for()，也有且仅有第一次调用时会创建（并返回）符号，而此后的调用都将直接返回该符号。
+
+#### JavaScript的原型继承
+
+一个对象系统的继承特性有三种实现方案，包括基于类（class-based）、基于原型（prototype-based）和基于元类（metaclass-based）。
+
+在JavaScript中，“空（null）”是作为一个保留字存在的，代表一个“属于对象类型的空值”。因为它属于对象类型，所以也可以用for...in去列举它；又因为它是空值，所以没有任何方法和属性，因而列举不到内容。另一方面，多数对象相关的方法调用都将null作为特殊值处理，例如它不能使用Object.keys()来列举键值。
+
+```javascript
+// 显示类型object， null是一个俗语对象类型的对象
+console.log(typeof null);
+
+// null 可被列举属性
+var num = 0;
+for (var propertyName in null) {
+  num++;
+  console.log(propertyName);
+}
+
+// 显示为0
+console.log(num);
+```
+
+null也可以参与运算，例如“+（加法和字符串连接）”或“-（减法）”运算。由于它并不创建自Object()构造器或其子类，因此instanceof运算会返回false。
+
+null不是“空白对象（empty object）”。空白对象（也称为祼对象），是一个标准的、通过Object()构造的对象实例。通过instanceof运算也会返回true。在默认情况下，它只有原生对象的一些内置成员。而for...in语句并不列举它们，所以空白对象在for...in中也并不产生任何效果。
+
+原型的含义是指：如果构造器（Object）有一个原型对象（Object.prototype），则由该构造器创建的实例（obj）都必然复制自该原型对象。换言之，所谓“原型（Prototype）”，就是构造器用于生成实例的模板。而这样的“复制”就存在多种可能性，由此引申出动态绑定和静态绑定等问题。
+
+
+
+Javascript仅当写某个实例的成员时，才将成员的信息复制到实例映像中。
+
+例如
+
+```
+obj2.value = 10
+```
+
+obj2仍然是一个指向原型的引用，在操作过程中也没有与原型相同大小的对象实例创建出来。但obj2（以及所有的对象实例）都需要维护一张成员列表。这张成员列表指向在obj2中发生了修改的成员名、值与类型，称为对象的自有属性表（own properties）。
+
+这张表是否与原型一致并不重要，只需要遵循以下两条规则。
+
+■ 规则1：保证优先读取对象的自有属性表。
+
+■ 规则2：如果在上述自有属性表中没有指定属性，则尝试遍历对象的整个原型链，直到原型为空（null）或找到该属性。
+
+所以JavaScript提供了以下方法：
+
+■ Object.getOwnPropertyDescriptor()
+
+■ Object.getOwnPropertyNames()来访问该表。而且在为某个属性置值时，本质上就是在这个自有属性表中创建一项，以覆盖原型中同名的属性。
+
+```javascript
+var obj1 = new Object;
+var obj2 = new Object;
+
+// obj1与obj2都访问Object.prototype.value
+Object.prototype.value = 'abc'
+console.log(obj1.value); // 'abc'
+console.log(obj2.value); // 'abc'
+console.log(Object.getOwnPropertyNames(obj2)); // 空数组
+
+// obj1的成员不变，仍然访问Object.prototype.value
+// obj2的自有属性表中创建了一个名为value的项
+obj2.value = '10';
+console.log(obj1.value); // 'abc';
+console.log(obj2.value) // 10
+console.log(Object.getOwnPropertyNames(obj2)); // ['value']
+```
+
+存取实例中的属性，比存取原型中的属性的效率要高。
+
+所谓“空白对象（empty object）”，是指在它的原型链上的所有自有属性表都为空的对象。而所谓“原型链（prototype chain）”，就是对象所有的父类和祖先类的原型所形成的、可上溯访问的链表。
+
+构造过程：**从函数到构造器**
+
+其实函数首先只是函数，尽管它有一个prototype成员。在默认情况下，所有函数的这个成员总是一个指向标准的Object()构造器的实例—空白对象，不过该实例创建后，constructor属性总是会先被赋值为当前函数。
+
+```javascript
+// 简单版本的asConstructor()
+function asConstructor(f) {
+	return Object.assign(f, {
+		prototype: { 'constructor': f};
+	});
+}
+aClass = asConstructor(new Function);
+```
+
+例子
+
+```javascript
+function MyObject() {}
+
+// 1.显示true，表明原型的构造器总是指向函数自身
+console.log(MyObject.prototype.constructor === MyObject);
+
+// 2.删除该成员
+delete MyObject.prototype.constructor;
+
+// 3.上述删除操作使该成员指向原型中的值（显示true）
+console.log(MyObject.prototype.constructor === Object);
+```
+
+函数与构造器并没有明显的界限，唯一的区别只在于原型prototype属性是不是一个有意义的值。例如，一个普通的JavaScript函数，如果不将它视作构造器，那么这个prototype属性就显得很多余了。
+
+对象原型所具有的基本成员
+
+| 成员名               | 类型     | 分类            |
+| -------------------- | -------- | --------------- |
+| toString             | function | 动态语言        |
+| toLocaleString       | function | 动态语言        |
+| valueOf              | function | 动态语言        |
+| constructor          | function | 对象系统：构造  |
+| propertyIsEnumerable | function | 对象系统：属性  |
+| hasOwnProperty       | function | 对象系统： 属性 |
+| isPrototypeOf        | function | 对象系统：原型  |
+
+构造器（函数）所具有的特殊成员
+
+| 成员名    | 类型     | 分类                                 |
+| --------- | -------- | ------------------------------------ |
+| call      | function | 动态语言（继承自Function.prototype） |
+| apply     | function | 动态语言（继承自Function.prototype） |
+| bind      | function | 动态语言（继承自Function.prototype） |
+| name      | string   | 函数式语言（总是重写为自有的成员）   |
+| arguments | object   | 函数式语言（总是重写为自有的成员）   |
+| length    | name     | 函数式语言（总是重写为自有的成员）   |
+| caller    | function | 函数式语言（总是重写为自有的成员）   |
+| prototype | object   | 对象系统：原型                       |
+
+Object的类方法
+
+| Object.xxx成员名            | 分类         |
+| --------------------------- | ------------ |
+| create()                    | 原型         |
+| getPrototypeOf()            | 原型         |
+| setPrototypeOf()            | 原型         |
+| assign()                    | 属性表项增改 |
+| defineProperty()            | 属性表项增改 |
+| defineProperties()          | 属性表项增改 |
+| getOwnPropertyDescriptor()  | 属性表列举   |
+| getOwnPropertyDescriptors() | 属性表列举   |
+| getOwnPropertyNames()       | 属性表列举   |
+| getOwnPropertySymbols()     | 属性表列举   |
+| keys()                      | 属性表列举   |
+| values()                    | 属性表列举   |
+| entries()                   | 属性表列举   |
+| seal()                      | 属性表状态   |
+| freeze()                    | 属性表状态   |
+| preventExtensions()         | 属性表状态   |
+| isSealed()                  | 属性表状态   |
+| isFrozen()                  | 属性表状态   |
+| isExtensible()              | 属性表状态   |
+| is()                        | 其他         |
+
+原型为null是原型继承中的特例，它有两种情况：其一，Constructor.prototype值为null；其二，Object.getPrototypeOf（obj）值为null。
+
+当一个函数作为构造器使用，且它的prototype属性为null值时（或prototype属性为任何非对象值），这个函数也是能创建出实例来的。但实质上这个实例是直接通过new Object()创建的：
+
+但有趣的是，尽管新实例不是由MyObject创建的，new运算却仍然会用它作为this来调用一次MyObject()。
+
+这样的对象实例是一个只有一级（没有原型链）的属性包—只有一个自有属性表。比起空白对象（empty object），它“更加空白”—连Object类的内置属性也没有继承。不过它仍然具有对象的一切性质，包括作为其他对象的原型，或者使用Object.defineProperty()等方法来操作它。
+
+与直接向Constructor.prototype属性置值不同，Object.setPrototypeOf()方法不接受对象和null之外的其他值。
+
+
+
+JavaScript原型继承的实质便是对原型修改“效果的传递”。它基于以下两个事实。
+
+■ 原型：原型是一个对象。
+
+■ 原型链：在访问属性时，如果子类对象没有该属性，则将访问其原型的属性表。
+
+
+
+从ES6开始，这一行为有了明确规范：重写操作被约定为针对自有属性表进行。因此重写的结果决定于写该属性时的性质设置，而不再继承自父类。
+
+一个在父类中不能被删除、列举且只读的成员被重写后，就变成了可删除、可列举和可写的。
+
+
+
+### JavaScript的类继承
+
+super的出现是为了填补原型继承的一项众所周知的不足：无法有效调用父类方法。
+
+类似
+
+```
+MyObjectEx.prototype.aMethod = function() {
+	var thisClass = this.constructor;
+	var parentClass = thisClass.prototype.constructor;
+	parentClass.prototype["aMethod"](); // 调用父类方法
+}
+```
+
+super.xxx作为方法调用时，将会隐式地传入当前方法中的this对象。
