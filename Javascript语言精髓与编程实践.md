@@ -1125,3 +1125,42 @@ MyObjectEx.prototype.aMethod = function() {
 ```
 
 super.xxx作为方法调用时，将会隐式地传入当前方法中的this对象。
+
+new运算将回溯它的继承链并使用顶端的原生构造器来构造实例。
+
+类继承中的this实例：
+
+■ 实际上是使用Object()构造器创建的。并且（使用它作为this引用）
+
+■ 调用构造器，该调用是顺序，从基类开始一直到MyObjectEx()。
+
+
+
+在类的构造方法中，不能在调用super()之前使用this引用。
+
+显然，必须让所有的构造方法都先调用super()以回溯整个原型链，才能确保基类最先创建实例。这也是没有在类中声明constructor()方法时，JavaScript会为它默认添加一个构造方法、并在其中调用super()的原因。更确切地说，如果子类是派生的（derived），那么它就必须在constructor()中调用super，而非派生类（即没有声明extends的类）就不能调用它。
+
+```javascript
+class MyObject {
+  constructor() {
+    console.log('->'. 'MyObject')
+  }
+}
+
+class MyObjectEx extends MyObject {
+  constructor() {
+    super();
+    console.log('->', 'MyObjectEx')
+  }
+}
+
+x = new MyObjectEx;
+// MyObject
+// MYObjectEx
+```
+
+this对象是在进入该构造方法之前就由引擎创建好了的（因此不需要在构造方法中调用super）；并且，在构造方法中还可以返回一个对象来替换这个默认创建的this对象。
+
+由于ParentClass是一个变量的当前值，因此它是否为null值，即super是否有效只能在执行过程中才确知。
+
+这种派生自null且没有构造方法的类其实也是可以创建实例的
