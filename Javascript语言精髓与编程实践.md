@@ -733,3 +733,166 @@ arguments或eval也不能使用delete去删除
 每个左侧标识符名的解析会在执行期再发生一次，在语法分析阶段解析它们的语法有效性。
 
 ### JavaScript的面向对象语言特性
+
+当Array()的参数只有一个并且是数值类型时（typeof的值为'number'），使用new运算创建出来的会是一个用该数值指定元素个数的数组—其每个元素都是undefined值。
+
+所有数组都是可迭代对象，但类数组对象却不一定可迭代；反过来说，可迭代对象也不一定都是数组。
+
+
+
+```javascript
+class MyObjectEx extends MyObject {
+  ...
+}
+  
+// 与如下效果类似
+MyObjectEx.prototype = new MyObject();
+MyObjectEx.prototype.constructor = MyObjectEx;
+```
+
+由class关键字引导的整个类声明（包括类表达式）代码块总是工作在严格模式中。这意味着extends声明也同样处在严格模式下。用extends声明的parentClass是一个表达式（的结果值），因此这事实上是说，该表达式将运行在严格模式中。
+
+```javascript
+class MyObjectEx extends MyObject {
+  constructor() {
+    super(x, y)
+  }
+}
+
+// 与如下效果相似
+function MyObjectEx() {
+  // super(x, y) 将实现为类似代码
+  MyObject.apply(this, [x, y]);
+}
+MyObjectEx.prototype = new MyObject();
+MyObjectEx.prototype.constructor = MyObjectEx;
+```
+
+注意在使用this之前，总是需要先显式地调用super()以便在当前构造方法中获得this实例。
+
+不过如果没有extends，那么不调用super也是可以的。
+
+**调用父类方法**
+
+```javascript
+// 声明基类上的foo()方法
+class MyObject {
+  foo(x) {
+    ...
+  }
+}
+  
+// 使用继承
+class MyObjectEx extends MyObject {
+  foo(x, y) {
+    super.foo(x); // <- 调用父类同名方法
+  }
+  
+  bar(x, y) {
+    super.foo(x); // <- 调用父类方法
+  }
+}
+
+var obj = new MyObjectEx();
+obj.foo(100, 200);
+```
+
+在使用super.XXX调用父类方法时也会隐式地传入当前的this引用，这与在构造器中调用super()时是一致的。
+
+**类成员（类静态成员）**
+
+在使用super.XXX调用父类方法时也会隐式地传入当前的this引用，这与在构造器中调用super()时是一致的。
+
+```javascript
+// 声明类的静态方法和属性
+class MyObject {
+  static get aName() {
+    return 10
+  }
+  
+  static foo() {
+    console.log(super.toString());
+  }
+}
+
+class MyObjectEx extends MyObject {}
+```
+
+访问类静态成员时并不需要创建对象实例，因为它是类自有的成员。
+
+只是在其中调用super()或super.XXX()时，this会绑定到类（构造器函数）本身—因为这种情况下并没有创建对象实例。
+
+对象成员有三种性质，称为属性的可读写（writable）、可列举（enumerable）和可重置（configurable）性质。
+
+对象成员可以是自有的（own properties），也可以是继承的（inheritedproperties）。所谓继承的，是指对象的父类或祖先类原型（即该对象的原型链上）具有该成员；子类对象可以用相同名字重新声明该成员，这称为覆盖（override）或重写（overwrite）。
+
+JavaScript对象的某些特定成员被设置为隐藏的，因而不能被列举
+
+在这种情况下，可以用“in”运算检测到该成员，但不能用“for...in”语句来列举它。
+
+propertyIsEnumerable()该方法是不检测对象的原型链的，即对象继承来的成员不能被列举。
+
+| 键名     | 成员         | 语法                           | 含义                         | 备注 |
+| -------- | ------------ | ------------------------------ | ---------------------------- | ---- |
+| 一般键名 | 仅显式成员   | for...in                       | 可列举的成员名(含原型链)     |      |
+| 一般键名 | 仅显式成员   | Object.keys()                  | 可列举的、非符号的自有属性名 |      |
+| 一般键名 | 仅显式成员   | Object.values()                | 可列举的、非符号的自有属性名 |      |
+| 一般键名 | 仅显式成员   | Object.entries()               | 可列举的、非符号的自有属性名 |      |
+| 一般键名 | 包含隐式成员 | Object.getOwnPropertyNames()   | 全部的、非符号的自有属性名   |      |
+| 符号键名 | 包含隐式成员 | Object.getOwnPropertySymbols() | 全部的、符号键名的自有属性名 |      |
+
+```javascript
+// Object.values(obj)
+Object.keys(obj).map(key => obj[key])
+
+// Object.entries(obj)
+Object.keys(obj).map(key => [key, obj[key]])
+```
+
+在Web浏览器中，DOM的约定是“如果一个属性没有初值，则应该将其置为null”。
+
+“.”和“[]”都是对象成员存取运算符，所不同的是：前者右边的操作数必须是一个标识符，后者在方括号中的操作数可以是变量、标识符、符号、字面量或表达式。
+
+无论是声明成员，还是取它的值，都可以在“[]”运算符中使用可计算的成员名，即使用表达式来作为成员名
+
+```javascript
+var nameLeft = 'abcd', nameRight= 'def'
+
+console.log(obj[nameLeft + '.' + nameRight])
+console.log(obj[[nameLeft, nameRight].join('.')])
+```
+
+成员的删除
+
+```javascript
+function MyObject() {
+  // ...
+}
+
+// 在原型中声明属性
+MyObject.prototype.value = 100;
+
+// 创建实例
+var obj1 = new MyObject();
+var obj2 = new MyObject();
+
+// 下面的代码并不会使obj1.value被删除
+delete obj1.value;
+console.log(obj1.value);
+
+// 下面的代码可以删除obj1.value，但是，由于是对原型进行操作会使obj2.value也被删除
+delete obj1.constructor.prototype.value;
+console.log(obj1.value);
+console.log(obj2.value);
+```
+
+不过该运算符不能用于删除：
+
+■ 用var/let/const声明的变量与常量。
+
+■ 直接继承自原型的成员。
+
+其中，关于delete不能删除“继承自原型的成员”有一点例外：如果修改了这个成员的值，仍然可以删除它（并使它恢复到原型的值）。
+
+JavaScript的一些官方文档中提及，delete仅在删除一个不能删除的成员时，才会返回false；在其他情况下（例如删除不存在的成员，或者删除继承自父类/原型的成员），即使删除不成功也会返回true。
+
