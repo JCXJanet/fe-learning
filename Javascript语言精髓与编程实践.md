@@ -1165,3 +1165,171 @@ this对象是在进入该构造方法之前就由引擎创建好了的（因此�
 
 这种派生自null且没有构造方法的类其实也是可以创建实例的
 
+#### JavaScript的对象系统
+
+JavaScript的变量作用域只有表达式、函数（局部）和全局三种
+
+| 面向对象的封装性   | 条件                           | 语法作用域   | JS变量作用域 |
+| ------------------ | ------------------------------ | ------------ | ------------ |
+| (partial)          | 声明在多个文件中可见           | 文件         |              |
+| published          | 语法效果同public               | 同public     | 同public     |
+| public             | 访问不受限制，在类的外部都可见 | 任意         | 全局         |
+| protected          | 该类及其派生类可见             | 类+子类      |              |
+| internal           | 该程序内可见                   | 项目         |              |
+| protected internal | 该程序内、该类及其派生类可见   | 项目+类+子类 |              |
+| private            | 仅该类可见                     | 类           | 局部         |
+
+在使用instanceof时，其实是在检测右边操作数的原型属性（aConstructor.prototype）的原型链，而不是这个操作数本身（例如不是aConstructor）的原型链。因此当试图将一个函数作为一般对象参与运算时，instanceof就失效了。而isPrototypeOf()可以在这种情况下检测两个函数之间的继承关系。
+
+```
+var f1 = new Function, f2 = new Function;
+Object.setPrototypeof(f2,f1);
+
+console.log(f2 instanceof f1); // false
+
+console.log(f1.isPrototypeOf(f2)); // true
+```
+
+这也同样是类之间无法使用instanceof来检测继承关系的原因，并且也是可以使用isPrototypeOf()解决的。
+
+如果一个方法“仅仅作为”函数被调用（而没有关联对象）的话，那么它的this会指向全局对象或undefined。
+
+方法/函数中所关联的this引用，是在调用该函数时（在运行期）动态传入的。传入这个this的总的规则有三项：
+
+■ 使用当前上下文中的this或函数已绑定的this；或，
+
+■ 在使用属性存取运算符（包括.和[]运算符）时将左操作数作为this传入，例如传入obj.showThis()中的obj；或
+
+■ 使用Function.call、Function.apply、Function.bind或Refex.apply等，将指定参数传入以用来作为this引用。
+
+
+
+当一个函数在调用时得到的this值是undefined或null时，那么：
+
+■ 如果函数工作在严格模式下，则仍使用undefined或null值作为this；否则
+
+■ 将以全局对象作为this值。
+
+
+
+箭头函数使用“当前上下文中的this”是ES6之后JavaScript的特殊行为
+
+在with语句中并不存在一个“上下文中的this”
+
+with语句中的对象方法会隐式地传入with的对象作为this引引用。
+
+
+
+箭头函数的另一个特殊性在于它会忽略“传入的this对象”。亦即是说，bind()、apply()或call()等方法，以及在Array.forEach()等方法中传入的this对象，对于箭头函数是无意义的。
+
+```
+// bind()等操作对箭头函数无意义
+function foo2() {
+	var func = () => console.log(this.name)
+	func.call(new Object);
+	[1].forEach(func, new Object);
+}
+
+foo2.call({
+	name: 'OutSide'
+})
+
+//测试后显示OutSide
+```
+
+
+
+
+
+类抄写后来进一步发展为称为“混入（mixin）”的对象编程方法
+
+
+
+我们用extent()维护了一个baseConstructor成员，这个成员总是指向父类的构造器。而子类实例的构造逻辑就变成了：先向父类传入this引用以抄写父类方法，再向子类传入this引用以抄写子类方法（如Animal.say等方法）；后者覆盖前者中的同名成员（如Cat.eat方法）。整个构造过程都是在不断地从“类构造器”向“this引用”抄写成员，因而被称为“类抄写”。
+
+
+
+类抄写有两个问题。第一个问题是以内存开销换取效率。
+
+
+
+。由于这种方法是通过不断修改实例（this）的成员来得到对象的，因此所有的属性都在实例（this）的自有属性表中。进一步的推论是：访问任何成员都不必回溯原型链，因而效率更高。
+
+
+
+类抄写的第二个问题是系统并不维护原型继承链。因此在类抄写构建的系统中，不能使用instanceof运算来检测继承关系。
+
+
+
+原型继承
+
+
+
+在这种方法中，new运算可以影响“内部原型链”，从而使instanceof运算可以有效检测一个实例与其原型链上的父代类之间的类属关系。
+
+对于原型继承来说，它不但存在一些语言特性上的缺陷：
+
+■ 在维护构造器引用和外部原型链之间无法平衡；和
+
+■ 没有提供调用父类方法的机制。
+
+并且还很显然是一个典型的、以时间换空间的解决方案：继承层次中邻近的成员访问更快，而试图访问一个不存在的成员时耗时最久。
+
+
+
+类继承既是对原型继承的增强，也是一种再实现。
+
+类继承比原型继承更加强调类的设计过程，类是对象的描述者，并且这种描述是强加在对象（类创建的实例）之上的。
+
+
+
+所谓原型继承，其本质只是“复制原型”，即，以原型为模板复制一个新的对象。
+
+
+
+向Object.create()传入其他非对象的prototypeObj值也会导致异常。当然，如果传入null值的话，也将得到一个“更加空白”的对象
+
+
+
+Object.create()只是避免使用构造器来设置新实例原型的一种方法，它没有了在构造器中修饰对象实例这一过程，但和class声明一样，在本质上仍然是原型继承。
+
+
+
+Arguments()的实例总是由引擎在函数调用时动态创建并添加在函数闭包中的，因此能在函数的执行代码中直接使用arguments这个标识符。
+
+
+
+WeakSet()与Set()对象一样有add()、delete()和has()方法，但是weakSet.add（x）中的x只能是对象，并且当这个对象x添加到weakSet时并不会增加x的引用计数—这意味着对象在WeakSet之外维护着生存周期，可以不经delete()操作而从该集合中消失。出于这样的原因，不可以列举WeakSet中的元素，也不可以从这个集合中取出元素，只能使用weakSet.has（x）来查看某个对象是否还存在—它或是已经消失了，或在其他某个地方被持有了引用。
+
+
+
+与WeakSet“使用对象的弱引用作为值”类似，WeakMap使用这样的弱引用作为键值对中的键（key）。因此后者也不能列举所有的键，即它既没有forEach()也没有keys()方法。
+
+
+
+JSON.parse()的结果并不总是对象。因为JSON格式的数据既包括对象与数组，也包括number、string、boolean和null值，所以JSON.parse()可能返回这些值。反之，JSON.stringify()也可以将这种值转换为JSON格式文本。
+
+
+
+通过反射（Refection）机制，可以访问、检测和修改对象的内部状态与行为。
+
+
+
+Refect对象用于“调用”对象的行为。与此不同，Proxy类从另一个角度来实现反射，它用于“改变”对象的行为。Proxy可以代理目标对象的全部行为，并通过在助手对象handler上的陷阱来响应“在代理对象上发生的”指定行为。
+
+
+
+```
+import * as xxx from 'moodule-name';
+
+console.log(Object.getOwnPropertySymbols(xxx)); // 显示 Symbol.toStringTag
+console.log(Object.prototype.toString.call(xxx)); // 显示 [object Moodule]
+```
+
+
+
+类似的—作用于特定对象实例的—效果，是不能通过一般方式来继承得到的。举例来说，Function函数的“可执行”效果
+
+
+
+同理，表中列出的各种内置对象/类的特殊效果不被对象系统继承：一方面，这些效果被引擎绑定在特定的构造器上，而不是它们的原型上；另一方面，对象系统只负责维护内部原型链，以确保instanceof运算能正确检测这种关系，而不负责这些特定效果的实现与传递。
