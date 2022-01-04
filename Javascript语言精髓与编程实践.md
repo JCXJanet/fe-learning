@@ -1271,3 +1271,87 @@ return !Object.isExtensible(obj) && Object.values(Object.getOwnPropertyDescripto
 
 
 属性就是一切，继承的本质就是对自有属性表的管理。
+
+| Symbol.xxx属性           | 影响行为                                                     | 属性值的界面                  |
+| ------------------------ | ------------------------------------------------------------ | ----------------------------- |
+| species                  | (隐式创建对象)                                               | function                      |
+| hasInstance              | obj instanceof target                                        | function (obj) {}             |
+| unscopables              | with  (target) ...                                           | { keyName: booleanValue, ...} |
+| toStringTag              | target.toString()                                            | string                        |
+| toPrimitive              | (值运算)                                                     | function (hint) {}            |
+| iterator                 | for (... of  target) ... / new  CollectionTypes(target) /Promise.allOrRace(target) / arr.from(target) /(解构赋值、展开运算符) | 迭代器对象                    |
+| (以下与数组或字符串相关) |                                                              |                               |
+| isConcatSpreadable       | Arr.concat(target)                                           | true / false                  |
+| match                    | str.match(target) / str.endsWith(target, ...) / str.includes(target, ...) / str.startWith(target, ...) / new RegExp(target, ...) | function (str) {}             |
+| replace                  | str.replace(target, newString)                               | function (str, newString) {}  |
+| search                   | str.search(target)                                           | function(str) {}              |
+| split                    | str.split(target, limit)                                     | function(str, limit) {}       |
+
+Symbol.toStringTag
+
+```javascript
+var obj = {
+	[Symbol.toStringTag]: 'YourObjectClassname'
+}
+
+console.log(obj.toString()); // '[object YourObjectClassname]';
+```
+
+Symbol.toPrimitive
+
+```
+var obj = {
+	[Symbol.toPrimitive](hint) {
+		if (hint == 'number') return NaN;
+    return 'invalid';
+	}
+};
+
+console.log('' + obj); // 'invalid'
+console.log(+ obj); // NaN
+```
+
+Symbol.hasInstance
+
+``` 
+class MyObject {
+	static [Symbol.hasInstance](obj) {
+		return super[Symbol.hasInstance](obj) || (obj && obj.className == 'MyObject');
+	}
+}
+
+var obj = { className: 'MyObject' };
+var obj1 = new MyObject;
+console.log(obj instanceof MyObject) // true
+console.log(obj1 instanceof MyObject) // true
+
+var fakedBase = new Object;
+fakedBase[Symbol.hasInstance] = (obj) => 'className' in obj;
+console.log(obj instanceof fakedBase); // true
+
+var atom = Object.create(null);
+console.log(atom instanceof Object); // false, 不是Object()的实例
+atom.className = '[META]'; // anything
+console.log(new Object instanceof fakedBase) // false, 排除一般对象
+console.log(atom instanceof fakedBase) // true, 是fakedBase的实例
+console.log({ className: ''} instanceof fakedBase); // true, 支持字面量
+```
+
+Symbol.unscopables
+
+unscopables指向一个对象，该对象的每一个属性指明是否从with闭包中强制排除对应的target.xxx属性。这是因为with（target）语句在试图将属性名作为名字访问—需要通过[[get]]行为去访问target的指定属性—之前，会用查表的方式查询unscopables对象。
+
+```
+var f = new Function;
+var constructor = null; // 在with语句之外的标识符
+
+// 会访问 f.prototype.constructor
+with (f.prototype) console.log(f === constructor); // true
+
+// 排除
+f.prototype[Symbol.unscopables] = { constructor: true };
+
+// 会访问到with语句之外的标识符
+with(f.prototype) console.log( f ===  constructor ); // false 
+```
+
