@@ -1355,3 +1355,112 @@ f.prototype[Symbol.unscopables] = { constructor: true };
 with(f.prototype) console.log( f ===  constructor ); // false 
 ```
 
+Symbol.isConcatSpreadable
+
+isConcatSpreadable是一个布尔值，仅当target是一个数组或类数组的集合（Collection）对象，并且试图使用arr.concat来连接它时才有意义。当target[Symbol.isConcatSpreadable]为true时，arr.concat()内部会调用循环取出target集中的每一个元素并添加arr—这个过程类似for...of target语句；否则将target对象作为单个元素添加到arr。
+
+```
+var obj = [1,2,3];
+
+obj[Symbol.isConcatSpreadable] = false;
+
+var arr = [0].concat(obj);
+console.log(arr.length); // 2
+console.log(arr[1]); // [1,2,3]
+
+var arr = [0].concat([1,2,3]);
+console.log(arr.length); // 4
+console.log(arr[1]); // 1
+```
+
+连结展开只作用于arr.concat()方法，在数组连接时用于展示目标对象（target），整个过程中是对目标对象的下标存取。而展开运算针对有迭代器的对象，包括字符串、Set/Map等，运算过程中也是迭代器在起作用，与下标存取没有关系。
+
+Symbol.match、Symbol.replace、Symbol.search和Symbol.split
+
+以str.split()为例，假设我们要用一个一般对象（作为目标对象）来分隔字符串，那么只需为它的Symbol.split为名字的属性设置一个分隔方法就可以了
+
+最后需要特别指出的是species符号，它指向一个构造器函数，主要影响JavaScript内部隐式创建对象的行为。
+
+
+
+Proxy这个侵入的路径看起来很好，但实际使用时却会有些问题，这有两个方面的原因。其一是因为部分JavaScript内部检测会绕过代理。例如，new运算会检测目标函数是否是构造器，这是通过检查其[[Construct]]内部方法槽是否有值来实现的，会绕过代理中的handler.construct。
+
+其二，因为这些内部方法事实上也是相互调用的，进而带来了递归调用的可能。
+
+
+
+反映在语言上，原子操作相关的语法或调用总是安全的。但是这也意味着开发人员要保证它们在覆盖时也不得调用其他非原子操作，否则会破坏系统的稳定性。
+
+最后再补充一下关于[[Set]]内部方法的操作。在[[Set]]置值时，如果它需要创建或更新自有的属性描述符，会调用[[DefineOwnProperty]]来实现。而且在整个过程中[[GetOwnProperty]]会发生多次，包括检测当前对象（例如，proxy）是否有指定属性，以及检测目标对象（例如，receiver）、目标对象的原型等。
+
+
+
+Object()是JavaScript对象系统的基类。然而（仅对于Object.prototype来说），不能重置它的原型。
+
+这是ECMAScript规范对Object.prototype的一点限制，确保它总是由宿主或脚本引擎来进行初始化。且一旦初始化之后，就不可再改变（这称为非可变原型，immutable prototype）。其具体的做法就是让Object.prototype的自有内部方法[[SetPrototypeOf]]指向一个特定的逻辑：
+
+■ 如果置值等于既有的值，则返回true；否则，
+
+■ 置初值之外的任何值，均返回false，表明不成功。
+
+JavaScript也将Object.prototype属性的性质置为不可写和不可重置
+
+侵入方法：扩展Object.prototype上的属性（包括添加或更新），从而影响所有以它为祖先类的子类和子类实例。
+
+```javascript
+function intrudeOnPrototype(Class, handler) {
+  var original = Object.getPrototypeOf(Class.prototype);
+  var target = Object.create(original);
+  var {proxy, revoke} = Proxy.revocable(target, handler);
+  Object.setPrototypeOf(Class.prototype, proxy);
+  return () => revoke(Object.setPrototypeOf(Class.prototype, original));
+}
+
+var str = new String('OldString');
+var recovery = intrudeOnPrototype(String, {
+  get: function(target, prop) {
+    if (prop === 't') return 100;
+    return Reflect.get(...arguments);
+  }
+})
+var str2 = new String('NewString');
+
+console.log(Object.getPrototypeOf(str) === Object.getPrototypeOf(str2)); // true
+console.log(str.t) // 100
+console.log(str2.t) // 100
+
+console.log((new Object).t) // undefined
+
+//重置
+recovery();
+console.log(str.t) // undefined
+console.log(str.t2) // undefined
+```
+
+直接替换Object.prototype并不是严格意义上的运行期侵入，因为这会导致替换前/后有两种不同原型的对象实例。又例如，其实你也可以替换Object()构造器本身。但这些都不是好的运行期侵入手段—它们会被感知到，也通常是不推荐的。
+
+
+
+所谓元类（meta class），是指能产生类的类。
+
+在运算符instanceof的一项约定：当它的右操作数是一个函数时，则使用该函数的.prototype来检查原型链。因为在这个表达式中，函数指代的是类（构造器），它之于对象实例的原型是Constructor.prototype（而不是构造器自身）。
+
+
+
+在MetaClassEx中声明的bar()方法又去哪儿了呢？bar()方法，准确地说是MetaClassEx.prototype.bar()方法，确实是被丢弃了。因为任何Meta所创建的类都是一个原子类（Atom），它的原型是null。这意味着“元”的原型不对它的实例（类）起任何作用。
+
+
+
+■ 原型继承系统：可以没有构造器的、原生的JavaScript对象系统。
+
+■ 类继承系统：使用class声明的ES6风格的面向对象系统。
+
+■ 元对象继承系统：以Atom，即MetaObject为基类。
+
+■ 类类型继承系统：以MetaClass为基类。
+
+■ 以及元编程系统：以Meta为元的可编程系统。
+
+
+
+可以思考下元编程。
