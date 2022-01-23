@@ -2312,3 +2312,833 @@ JavaScript中的函数都具有“作为方法时依赖于对象生存周期”�
 ##### 函数对象的闭包及其效果
 
 亦即是说，Function()的实例的upvalue总指向全局闭包。
+
+##  JavaScript的动态语言特性
+
+### 动态类型：对象与值类型之间的转换
+
+undefined、number、boolean、string、symbol、function和object
+
+#### 包装类：面向对象的妥协
+
+##### 显式创建
+
+从语言的实现来说，这与传统语言中的“类型强制转换”完全不同：强制转换是在同一数据（相同内存地址的不同引用）的基础上进行的，但上述语法将创建一个新的数据。
+
+##### 隐式包装的过程与检测方法
+
+undefined没有包装类，因此也就没有所谓的实例（v2），或进行instanceof运算。
+
+对string、number、boolean和symbol的值v检测的结果表明：
+
+■ 进行typeof检测时，都不是'object'，这表明“值类型数据”不是对象。
+
+■ 进行instanceof检测时，值都是false，表明它们都不是通过对象系统（构造器）创建的。
+
+■ 这两项特征真实地反映了“基础数据类型（值类型、值类型数据）”的特性。
+
+##### 函数特例
+
+■ typeof对函数字面量（v）与包装后的对象（v2）检测都返回'function'，这表现了JavaScript作为函数式语言的重要特性—函数是第一型。
+
+■ 对v与v2进行instanceof检测，它们总是Function的一个实例，这表现了JavaScript作为面向对象语言的重要特性—函数是对象。
+
+#### 从对象到值
+
+##### 对象到值的隐式转换规则
+
+除了null之外的所有其他对象都必然转换为Boolean的true值。
+
+■ 如果试图转换为字符串，则先尝试该对象的toString()方法，然后再尝试valueOf()方法；否则（必然是尝试转换为数字）
+
+■ 首先尝试调用valueOf()方法，再尝试调用toString()。
+
+如果toString()或valueOf()返回非值的对象，则视为结果值无效，并按上述规则尝试另一个方法。
+
+由于在ECMAScript规范中，null值会被认为是这样的“（非对象的）原始值”
+
+##### 直接的值运算不受包装类的方法影响
+
+因此对值类型数据来说，在包装类原型上的toString()和valueOf()方法其实只会对（包装后对象的）显式方法调用有效，而并不影响原始的值运算
+
+“类型转换分两个阶段”：其一是转换为原始值（to primitive value），其二是转换为尝试运算的值类型（to a number，or other）。
+
+而这两个阶段，一个受上述“隐式转换逻辑（Ordinary To Primitive）”控制，另一个则受具体的运算操作（例如运算符、函数或用户自定义的方法）控制。
+
+##### 什么是“转换的预期”
+
+而在“所有没有预期”的情况下，JavaScript优先使用“先valueOf()，后toString()”这一顺序。
+
+亦即是说，隐式地、默认地以“x.valueOf()”为优先。
+
+##### 布尔运算的特例
+
+“任何对象（包括布尔对象）”在进行布尔运算时，都是作为对象使用的；
+
+在进行数值或字符串运算时，都是按隐式规则使用valueOf()和toString()来转换为值使用的。
+
+##### 符号Symbol.toPrimitive的效果
+
+任何对象都可以通过Symbol.toPrimitive这个符号属性来改变它作为值的效果。一旦对象（或它的原型）声明过Symbol.toPrimitive属性，那么valueOf()与toString()在值运算的隐式转换中就无效了。
+
+使用Symbol.toPrimitive的优先级高于valueOf()和toString()方法，但不影响任何对这两个方法的直接调用。
+
+由于符号Symbol.toPrimitive属性约定是一个函数，其界面中的hint表明“预期转换到的目标类型”，如下：
+
+```
+X[Symbol.toPrimitive] = function (hint)  {
+	if (hint == 'string') ...
+}
+```
+
+旦启用了Symbol.toPrimitive属性，那么它：
+
+■ 替代内置隐式转换规则。因此隐式转换中“顺次使用toString()和valueOf()”这样的行为就失效了。
+
+■ 并且替代内置隐式转换规则对异常行为的处理。
+
+因此，在这个Symbol.toPrimitive属性的函数中返回对象的行为，就与toString()和valueOf()“全都返回”对象的行为一致（抛出异常）。
+
+无论Symbol.toPrimitive属性的函数中返回的内容是否符合预期，只要它不是对象，那么该值就会进入后续的运算。而怎样接受这个值（包括它可能是符号、布尔值等），仍然和之前一样，取决于后续的具体运算符或运算规则。
+
+#### 显式的转换
+
+■ 用Object（x）将值转换成对象。
+
+当使用Object（x）时，如果x是值，则返回以x为值的对象；如果x是对象，则返回x本身。因此无论如何，它的返回结果都是一个有效的对象。
+
+■ 用Number（x）等函数调用形式将对象转换为对应的值。
+
+### 动态类型：值类型的转换
+
+JavaScript中数据的类型并不是由变量声明来决定的，它的类型将会延迟到它绑定一个数据时才能确定。
+
+####  值运算：类型转换的基础
+
+值类型和引用类型
+
+对于计算系统来说，引用类型的价值是：
+
+■ 标识一组值数据。
+
+■ 提供一组存取值数据的规则。
+
+■ 在函数中传递与存储引用（标识）。
+
+##### 完整过程：运算导致的类型转换
+
+在语法分析期，JavaScript引擎首先解析到运算符，并将它的操作数（标识符或字面量值）置入语法树—在这一过程中并不对操作数的类型做任何推定。在运行期，引擎执行语法树上（由运算符指定）的运算时，将首先根据“（运算符对）转换的预期”进行一次操作数的隐式转换。
+
+在这里首先进行的语法推断是：是检查引用还是求值运算。
+
+即最终所有的运算目标都是“求值”。
+
+#### 值类型之间的转换
+
+##### undefined的转换
+
+任何值都不能转换为undefined，
+
+undefined能转换为特殊数字值NaN，因此它与数字值的运算结果将会是NaN，而不会导致异常。
+
+undefined能转换为字符串'undefined'与布尔值false，它总能恒定地得到这两个值。
+
+##### number的转换
+
+除了符号之外的任何值都可以被转换为number类型的值。如果转换得不到一个有效的数值，那么结果会是一个NaN，而NaN又是一个可以参与数值运算的值。这样处理的目的是，使得表达式可以尽量求值，而不是弹出一个异常。
+
+number值转换为布尔值时，非零值都转为true，零与NaN都转为false。与上述规则相容的情况是，以下特殊的数值都会被转换为true：
+
+■ Number.NEGATIVE_INFINITY，比（-Number.MAX_VALUE）更小的值，负无穷大。
+
+■ Number.POSITIVE_INFINITY，比（Number.MAX_VALUE）更大的值，正无穷大。
+
+■ Number.MIN_VALUE，能表示的最接近零的正值。
+
+■ Number.MAX_VALUE，能表示的最大正值。
+
+■ Number.MAX_SAFE_INTEGER，最大的安全整数，即（253-1）。
+
+■ Number.MIN_SAFE_INTEGER，最小的安全整数，即-（253-1）。
+
+■ Number.EPSILON，1与“能表示的大于1的最小的浮点数”之间的差值。
+
+■ global.Infinity，Number.POSITIVE_INFINITY的初始值。
+
+
+
+■ Number.NEGATIVE_INFINITY，转换为'-Infinity'。
+
+■ Number.POSITIVE_INFINITY，转换为'Infinity'。
+
+■ global.Infinity，转换为'Infinity'。
+
+■ global.NaN，转换为'NaN'。
+
+除此之外，其他数值都能被转换为一个有数值含义的字符串，例如'5e-324'。
+
+##### boolean的转换
+
+boolean值的true和false总是被转换为数值1和0，
+
+##### string的转换
+
+JavaScript中对“字面量数字”与“字符串数字”的处理是不一样的，尽管它们看起来类似。首先，如果在代码中出现了字面量数字，那么这个数字是在语法分析阶段处理并作为一个数字值存放在变量中的。在这个处理中，JavaScript会识别包括八进制在内的多种进制类型。然而，如果是“字符串数字”，那么它的转换过程只会发生在运行期，并且没有任何隐式的机制来处理八进制类型。
+
+如果一个字符串由数值和不多于一个的小数点构成，那么它总是能被当作十进制数来转换为数值。
+
+如果字符串由'0x'（零和x|X）开始作为前缀，且由0～9、A～F、a～f这些字符（不包括小数点）构成，则它总是可以被作为十六进制数转换为数值。
+
+JavaScript会尽量将字符串转换为整数值。因此即使字符串使用字符'e|E'（大小写皆可）这样的指数形式，那么转换结果也可能是一个整数。但如果不能作为整数有效存储，那么它也可能是一个指数形式的浮点数。例如
+
+```
+console.log(+'9.9E5') // 显示990000
+```
+
+不能把“true”和“false”这两个字符串转换为对应的boolean值（尽管boolean值是转换为这些字符串的）。在字符串中，有且仅有空字符串能被转换为布尔值false，其他的字符串在转换后都会得到true。
+
+##### symbol的转换
+
+与undefined一样，没有任何类型能转换成符号。尽管任何类型都可以作为Symbol()的传入参数，并作为该符号的、字符串值的描述信息。
+
+symbol只有一个值类型的转换可以发生：它可以转换为boolean值的true。
+
+#### 值类型之间的显式转换
+
+##### 到数值的显式转换
+
+parseInt()支持传入一个值在2～36之间的radix参数来指定所使用的进制。
+
+在调用parseInt()时，如果转换不成功，则返回NaN。如果radix为16，无论aString是否有前缀“0x”，该字符串都将按十六进制处理；如果radix为8，无论aString是否有前缀“0”，则该字符串都将按八进制处理。
+
+如果不指定radix，那么将采用数值字面量声明中使用的规则：将有前缀“0x”的处理成十六进制字符串，否则视为十进制字符串。
+
+parseInt()和parseFloat()的另一个问题是它们总是尝试先将参数转换为字符串，即使参数本身就是数值。
+
+Number（x）是将参数默认作为值类型处理，只有x是对象类型时才按照隐式规则来转换：首先调用x.valueOf()方法，之后再尝试调用x.toString()。而parseInt()和parseFloat()总是预期参数为字符串，所以会先调用x.toString()。
+
+所以对于parseInt()与parseFloat()，除非你能准确理解“将参数转换为字符串”时的规则，或你确实只传入有效的字符串值（例如，显式地调用x.toString()），否则不要使用它们。使用Number()来进行转换，将是更加安全的策略。
+
+##### 到字符串类型的显式转换
+
+通过使用String（x）方式的显式转换，我们可以将不包括undefined在内的任意值或对象转换为字符串。之所以说“不包括undefined”，是因为在语法上没有办法叙述这个转换过程。
+
+但是ECMAScript对undefined到string的转换是有明确约定的：一个undefined值应当转换为字符串'undefined'。要展示这一点，只能触发JavaScript的隐式转换。
+
+此外，对于数值类型的数据来说，还可以使用toString()的一种扩展形式：
+
+```
+aNumber.toString([radix])
+```
+
+其中，radix表示进制。
+
+此外，它的转换结果不会根据你的意愿来补零前缀，而且默认总是小写的字符。
+
+■ toFixed（digits），使用定点计数法，返回串的小数点后有digits位数字。
+
+■ toExponential（digits），使用指数计数法，返回串的小数点后有digits位数字。
+
+■ toPrecision（precision），使用定点计数法，返回串包括precision个有效数字（如果整数部分少于precision位，则在小数部分用0补齐），如果整数部分多于precision位，则使用指数计数法，并使小数点后有precision-1个数字。
+
+
+
+■ Date.prototype.toGMTString，格林尼治标准时间（GMT）表示的日期字符串。
+
+■ Date.prototype.toUTCString，协调世界时（UTC）表示的日期字符串。
+
+■ Date.prototype.toISOString，国际标准化组织（ISO 8601）表示的日期字符串。
+
+■ Date.prototype.toJSON，在将日期转换成JSON文本时由JSON.stringify()调用的方法，并且其他JavaScript对象或类也可以定义自己的toJSON()方法。
+
+■ Date.prototype的toDateString和toTimeString方法，引擎默认格式的日期字符串（Date部分、Time部分）。
+
+■ String.prototype的toUpperCase和toLowerCase方法，字符串转换为大写、小写。
+
+■ Number.prototype的toFixed、toExponential和toPrecision方法，略（如前述）。
+
+
+
+■ Date.prototype的toLocaleDateString和toLocaleTimeString宿主环境下的当前时区、当前系统配置的日期字符串（Date部分、Time部分）。
+
+■ String.prototype的toLocaleUpperCase和toLocaleLowerCase使用本地格式转换字符串大小写，在多语言环境、不同的内码中可能会有不同表现。
+
+■ <对象>.toLocaleStringArray、Date、Number、Object等类（的实例）具有该方法，其含义是根据本地规范来显示某种格式化的字符串，但其效果与引擎和操作系统环境的设置有关：默认情况下它与toString()的效果一致，但是除Object之外，其他类都有独自的实现而非直接指向toString()方法。
+
+
+
+##### 到undefined值的显式处理
+
+任何情况下你都可以对表达式使用void运算来将其结果“转换”成undefined。
+
+#####  到布尔值的显式处理
+
+“！！”确实可以用来显式地将目标数据转换成一个布尔值。
+
+推荐在需要这种处理时直接使用Boolean（x）而非！！x，前者的语义更加明确。
+
+
+
+### 动态类型：对象与数组的动态特性
+
+在JavaScript中，（使用索引存取的）数组的下标必须是值类型的—如果试图将一个引用类型（object/function）或undefined类型值用作函数下标，则它们将被转换为字符串值来使用。而值类型数据包括number、boolean、symbol与string，这其中只有boolean是序数的，其他三种则是非序数的（number在JavaScript中表现为浮点数）。因此JavaScript必然以关联数组为基础，来实现“（使用索引存取的）数组”这种对象类型。
+
+#### 关联数组与索引数组
+
+for...of语句使用的是数组的迭代器接口，而forEach()则是通过循环来增量列举下标。这两种方式都是典型的索引数组存取逻辑。
+
+#### 索引数组作为对象的问题
+
+##### 索引数组更加低效
+
+由于JavaScript数组是“基于关联数组”实现的，因此数组并不是一个连续分配的空间。
+
+数组的绝大多数方法都将尝试列举所有下标[插图]
+
+#### 类数组对象：对象作为索引数组的应用
+
+数组的绝大多数方法都可以用类似上述的技巧来应用于一个类数组对象，并且同时维护这个对象的length属性。但是所有使用数组的迭代器接口的方法，却不适用于上述对象
+
+因为类数组对象默认时并没有定义Symbol.iterator这个属性
+
+最后，你也可以用更为简单的代码来获得这样一个类数组对象。如下例：
+
+```
+// 将数组转换为类数组对象（不适用迭代器）
+var arr2 = Object.setPrototypeOf([], null);
+
+// 或者，使用迭代器
+var withiterator = Function('return arguments')();
+var arr2 = Object.setPrototypeof(['A', 'B'], withIterator);
+console.log(...arr2); // A B
+```
+
+也就是说，将任何数组的原型设为null，那么这个数组就成了类数组对象；如果进一步需要迭代器，那么将它的原型设为上例中的withIterator就可以了。这是因为withIterator对象，即参数对象本身就是仅有length和Symbol.iterator两个自有成员的原子对象。
+
+#### 其他
+
+```
+console.log(new Map([[NaN, 0], [NaN, 1]]));
+// Map{ NaN => 1}
+console.log(new Set([NaN, NaN]));
+// Set{ NaN }
+```
+
+类型化数组也是集合类型（Collection Types）对象的一种，它的构建界面也允许传入“有迭代器接口的对象”作为源。但是，类型化数组会先通过迭代器接口得到一个类数组对象，然后再列举这个类数组对象的每一个成员并将它们添加到数组中去。之所以需要这样一次中介转换，原因在于类型化数组需要一个length值以便预先分配好内部的Buffer。
+
+### 重写
+
+#### 标识符的重写及其限制
+
+标识符迟绑定是JavaScript的语言特性之一。所谓迟绑定，就是标识符在语法分析期是没有类型与值的，它的类型与值要推迟到运行期才能决定；而将这个值赋给标识符（并进一步确定了标识符的类型）的过程，称为绑定。
+
+在环境（作为一个设施）就绪的时候，其上下文中的所有标识符就被创建了；随后，用户代码开始执行，并且依据标识符在用户代码中的逻辑顺序在执行过程中完成绑定。
+
+系统内部绑定操作。其一，除了let/const之外的声明，是在用户代码执行之前绑定的；其二，模块的导入导出是在用户代码执行之前由模块的装配逻辑负责绑定的。
+
+然而let变量与const常量只有标识符的声明语义，其绑定语义是在执行过程中由赋值操作来实现的。
+
+##### 早于用户代码之前的声明与重写
+
+归结起来，以下方式都可以产生/声明出一个标识符：
+
+■ var/const/let声明（包括它们在for语句中的声明）
+
+■ 具名函数的名字及其形式参数名
+
+■ 类声明中的类名
+
+■ 模块导入
+
+■ catch()块
+
+■ （非严格模式下，）向一个不存在的变量名赋值
+
+在系统约定的名字中，只有arguments在非严格模式下可以重写；
+
+undefined与null/false/true这些值一样，是一个ECMAScript语言约定的原始值。但是因为历史原因，undefined是可写的，只是（在非严格模式中）重写该值无效而已
+
+这是因为历史中undefined并非是一个显式的、可全局访问的值，而是void运算的结果，或当函数没有返回，又或者变量声明后没有赋值等情况下JavaScript语言给返回的一个默认值。
+
+具体来说，undefined是global的一个属性，而null/true/false等不是
+
+##### 声明对标识符可写性的影响
+
+■ var/const/let在语法分析期仅得到标识符名。
+
+■ 在执行期它们在语义上是“将值绑定到标识符”，而非赋值。
+
+在这些环境的构建过程中，从“标识符名”变成“环境中可访问的标识符”是一个特定的操作，叫“创建绑定（Create Binding）”
+
+然而JavaScript创建的绑定（Binding）也有两种，称为“持久绑定（Immutable Binding）”和“可变绑定（Mutable Binding）”。
+
+const声明所对应的一定就是持久绑定，而let/var则对应可变绑定。亦即是说，标识符的可写性是在它作为绑定被创建时就一次性决定了的。
+
+由于常量的标识符不可重写，所以它必须在声明时立即绑定初值。
+
+##### 赋值操作带来的重写
+
+首先，迟绑定决定了语法分析期将几乎不对被操作数进行类型分析。
+
+并且在多数情况下，对lhs有效性的进一步检测将会发生在执行期（也因此导致执行运算错误而非语法问题）。
+
+##### 对象内部方法对重写的影响
+
+```
+undefined++
+NaN
+```
+
+■ 访问到global['undefined']并得到了一个引用（可引用性为true）来作为lhs；并且，
+
+■ 随后由++运算来向lhs进行隐式的赋值操作，由于'undefined'属性在global对象上是只读的（可写性为false），因此写操作并不成功。由于global对象的内部方法[[Set]]在非严格模式中并不抛出异常，所以这个异常被忽略了。然后，
+
+■ 由于undefined转换为数值后为NaN，而NaN的++操作运算结果仍然是NaN，所以返回NaN值。
+
+#### 构造器重写
+
+##### 使用类声明来重写
+
+语法上它们（let/const/class）不能被重复声明
+
+#### 对象成员的重写
+
+##### 成员重写对作用域的影响
+
+在全局环境中使用var声明的变量是声明在全局对象的一个不可删除的属性（属性描述符的configurable值为false），而使用eval()来声明var变量的方式与此效果类似，但却是可以删除的属性。第三种操作这个全局对象的属性的方式是通过“向未声明变量赋值”的方式来隐式创建的变量名，它与第二种方式在全局属性上的效果完全一致。
+
+这意味着在with语句形成的作用域中，对象的重写行为是不可预期的。虽然有一些潜在的规则，但是迭代器（用户代码可重写）的存在会将这一切破坏殆尽。因此，一定程度地控制动态特性（例如重写），也是在严格模式中禁用with语句的主要原因之一。
+
+#### 引擎对重写的限制
+
+##### this与super等关键字的重写
+
+但JavaScript并不阻止用户代码将包括this、super和new等关键字在内的名字作为属性名
+
+然而这并不意味着用户代码可以重写对象闭包中的this引用
+
+任何时候直接使用this、super等标识符，都是由JavaScript在创建作用域时为它们绑定对象的，这一过程与闭包链上有没有'this'或'super'这些标识符无关。另外一个与此类似的词法元素是new.target，它也是在调用构造方法的过程中由引擎创建在上下文中的。
+
+###  动态执行
+
+####  eval()在不同上下文环境中的效果
+
+##### eval()使用当前函数的闭包
+
+一般情况下，eval()总是使用当前函数的闭包。基本上来说，这是最理想的情况。但在具体实现时，不同函数类型对它其中的eval（sourceText）还是有着不同的影响的：
+
+■ 如果不是在函数闭包内使用eval，那么将禁止在sourceText中访问new.target；否则，
+
+■ 如果函数不是类的构造方法，则禁止在sourceText中访问super.xxx()调用；且，
+
+■ 如果函数不是对象或类的方法声明，则禁止在sourceText中对super.xxx进行属性存取。
+
+#### Eval环境的独特性
+
+eval会有自己独立的执行环境（称为“Eval环境”），并且它会为sourceText块构建自己的词法作用域。因此即使你使用eval在sourceText块中创建了一个名字，它也将在eval()执行语句结束之后被废弃
+
+##### 默认继承当前环境的运行模式
+
+默认情况下，eval默认继承当前环境的运行模式。在其他三种可执行结构中：
+
+■ Module是默认工作在严格模式中的，因此它其中子级的函数或eval()调用都将使用严格模式来创建新的环境。
+
+■ Script取决于全局代码装载时所指定的模式，默认情况下是非严格模式的。
+
+■ Function如果不是从它父级的环境中继承了严格模式，或者使用"use strict"显式地启用严格模式，那么默认情况下它就是处于非严格模式的
+
+##### 例外：obj.eval()的特殊性
+
+在任何环境中使用obj.eval（sourceText），它都将默认运行在非严格模式中，且它的作用域指向全局。也就是说，sourceText无论如何都会得到一个非严格模式的全局环境（即使当前全局原本运行于严格模式）。
+
+eval也是唯一一个可以使用间接模式来调用的函数。所谓“间接调用”，是当eval函数不是直接来自（在当前上下文中）对它的标识符查找，而是来自某个运算过程的结果时，对该结果的调用。
+
+#### 动态执行过程中的语句、表达式与值
+
+eval()将这段代码视作了包含单个“单值表达式语句”的、可被执行的“块（Block）”。
+
+#### 序列化与反序列化
+
+##### 在对象与函数上的限制
+
+JSON.stringify()并不处理函数
+
+#####  对象深度与循环引用
+
+以Object.assign()为例，它只处理源对象的自有属性表，并且对于“引用类型的属性”来说只需要复制其引用即可，因此它不存在对象深度的问题。而JSON.stringify()与此不同，它将考查目标对象的全部属性，包括“引用类型的属性（即对象类型的属性）”，所以就存在了“对象深度”的问题。
+
+JSON.stringify()将忽略函数对象或对象中的函数类型的属性。
+
+#### eval对作用域的影响
+
+支持动态执行的代码是不能真实编译的，这里说的真实编译，是指编译成二进制的机器代码，而非某种支持动态执行的虚拟机环境中的中间代码。
+
+一旦引擎全面支持动态执行，则编译过程必须以明文形式保存标识符表。
+
+#### 其他的动态执行逻辑
+
+##### 动态创建的函数
+
+动态创建的函数总是位于非严格模式的全局作用域中，而不是创建该实例时所在的词法上下文。
+
+动态函数并不继承当前环境中的严格模式，并且严格地说，动态函数总是使用一个“非严格模式的全局环境”作为自己的父级作用域。因此动态函数总是默认工作在非严格模式中，除非动态函数自己的代码中首行是“"use strict"”指示字符串。
+
+以便eval中的代码可以操作到全局变量环境并通过var x...在其中创建新的变量名。简而言之，使用动态创建时，函数与全局仍然是隔离在两个环境中的；而eval环境（的变量环境）是嵌在全局环境中的。
+
+动态创建的函数在其他方面并没有特殊性，不过由于它总是工作在“非严格模式的全局环境”中，因此它不能绑定当前环境中的this（反过来，箭头函数是绑定当前环境中的this的）。出于这个原因，动态创建的函数总是被指定为“非词法this”，再加上它工作于非严格模式的全局，因此“默认时”它总是能返回全局的this，也就是global。这也是为什么如下代码总是能“安全地”获得global的原因
+
+##### 模板与动态执行
+
+它类似于直接调用的eval，工作在当前环境中，并且总是以表达式方式来执行字符串文本。
+
+模板工作在当前环境中，是因为模板是作为字面量来创建的，因此它（作为一个字符量值）将初始化于当前环境创建的过程中。而模板中引用的那些“名字/标识符”，是在使用这个模板时，采用“类似标记模板的执行（CallExpression TemplateLiteral of Tagged Templates）”的技巧来引用当前环境中的变量的。由于模板创建时绑定了当前环境，因此那些名字也就不可能被替换。
+
+### 动态方法调用（call、apply与bind）
+
+#### 丢失的this引用
+
+这种方法也可以用在方法声明上（包括类的静态方法）。例如：
+
+```
+class MyObj {
+	constructor(id) {
+		this.id = id;
+	}
+	
+	get foo() {
+		return () => {  // 这里的“上下文中的this”是读foo属性时传入的对象
+			console.log(this.id);
+		}
+	}
+}
+
+// 示例：每个MyObj实例都可以有自己的foo方法并已绑定了this
+f = (new MyObj('o1')).foo;
+f(); // 'o1'
+
+f = (new MyObj('o2')).foo;
+f(); // 'o2'
+
+// 示例: 箭头函数会忽略其他方法的this绑定
+// 尝试将它赋给对象方法，或者使用apply/call
+obj = { id: 'obj', foo: f};
+obj.foo(); // 'o2'
+obj.foo.call(obj); // 'o2'
+obj.foo.apply(obj); // 'o2'
+```
+
+#### bind()方法与函数的延迟调用
+
+bind()方法绑定后的函数仍然可以作为构造器使用，并允许使用上述的传入参数。在这种情况下，构造出来的对象既是“绑定后的函数”的一个实例，同时也是原来的—绑定前的函数的一个实例。
+
+bind()方法的传入参数，总是被暂存且在调用时作为最开始的几个参数。这里的意思是，最终参数的个数是一个动态的组合（既包括绑定时预设的，也包括调用时新加的）
+
+并且绑定函数（例如上例中的f()）是可以再次绑定的，参数也将向前叠加。
+
+也就是说，在多次绑定中，参数是向前叠加的，但this绑定并不向前覆盖。
+
+#### 栈的可见与修改
+
+```
+function func_1(v1) {
+	v1 = 100;
+}
+
+function func_2(name) {
+	func_1.apply(this, arguments);
+	console.log(name);
+}
+
+// 显示传入参数未被修改，值仍为'Myname'
+func_2('MyName');
+```
+
+尽管看起来func_1与func_2中使用的arguments是同一个，但事实上在调用func_1.apply()时，arguments被做了一次复制：值数据被复制，引用数据被创建引用。因此，func_1与func_2中的arguments看起来是相同的，其实却是被隔离的两套数据。
+
+严格模式并不是禁用了调用栈的访问，而是禁止了arguments.callee属性以及aFunction.caller属性的访问
+
+#### 严格模式中的this绑定问题
+
+其一，在非严格模式（以及ES3标准）中，如果call()/apply()方法的第一个参数传入null或undefined，那么在函数内的this将指向全局对象（global）或顶层对象（例如浏览器中的window）；而在严格模式中，this将仍然使用null或undefined—这意味着在严格模式下的call/apply中，的确会存在访问this引用导致异常的情况。
+
+其二，在非严格模式（以及ES3标准）中，如果call()/apply()方法的第一个参数传入一个值类型的数据，那么它会被先包装为对象再送入函数作为this引用；而在严格模式中并不会发生这个包装过程，而是仍然直接送入该值。
+
+ES5之后对这一点的设计初衷在于：在非严格模式下，将尽量推测代码的意图，以保证代码不抛出异常；而在严格模式下，如果发生异常则必然是用户代码存有不明确的语义所致的，并且这种异常应当由外围的或严格模式下的try...catch来及时处理。
+
+### 通用执行环境的实现
+
+#### 通用DSL的模型
+
+##### 概念设计
+
+所谓一种语言，也就是“通过某种规则来解析（parser）一段文本，将它执行（evaluator）在某个上下文环境（environment）”中。
+
+##### 引擎中的环境
+
+ECMAScript本质上是声明了一个JavaScript引擎的实现
+
+首先，需要为引擎创建一个“域（realm）”，以便让引擎的不同实例可以运行在不同的域中。域类似进程管理，用于隔离每个引擎实例可以访问的实际资源，也可以调度它们。但宿主对于“域”的调度，在引擎看来是透明的
+
+然后，你需要为这个域初始化它的“内在值（Intrinsic values）”，这些是引擎为JavaScript环境准备的最基础的实现组件，例如null值，又例如一些公共的常量定义。
+
+在当前realm中初始化了内在值，意味着realm（在引擎环境的级别）拥有了引擎赋予它的能力和知识。这在语言设计中是一个很重要的概念：realm代表着一个“用于实现语言的场所”，而intrinsics代表这个场所中的“物件”。接下来，ECMAScript的规范开始约定如何用这些“物件”在“场所”中搭建JavaScript引擎所理解的“全局”。
+
+第二步是按ECMAScript规范为global这个对象（即realm.[[GlobalObject]]）添加成员，例如Math、Object()、undefined等。
+
+第三步则将使用这个realm.[[GlobalObject]]创建一个全局环境。这是ECMAScript规范中的标准环境，对于引擎来说，环境既是用户代码的执行现场的一个快照，也是执行引擎通过“执行上下文（ExecuteContext）”来管理用户资源的一个入口。所有的可执行对象（即在JavaScript中有4种可执行结构，参见“5.5.1.1 闭包与非闭包”）都有它们对应的环境。
+
+#####  对用户代码的语法分析
+
+在ECMAScript中约定，代码的解析是在它执行之前完成的，更确切地说，是在全局环境之后、在第一个引擎任务（ScriptEvaluationJob）执行的最初完成解析。但是这里有一个例外，因为当类声明中没有构造方法（constructor）时，ECMAScript约定引擎需要为该类动态插入一段硬代码，而这段硬代码“原则上”是一段代码文本，因此也就存在了动态解析的必要性。
+
+第一步，需要准备一段文本代码，并将它视为一个完整的.js文件。这是因为，语法解析通常是从文件中解析代码的，并且由于ECMAScript约定“代码文本”是以“语句行（Statement lines）”为基本单位的，因此语法解析将“逐行解析”源代码文本。
+
+如果它是以"script"类型载入的，那么它就是全局代码；如果它以"module"类型载入，那么这就是模块的顶层代码。
+
+##### 执行前的准备工作
+
+JavaScript的执行过程发生于受引擎管理的一个“执行上下文”内部。
+
+引擎的主要职责之一就是调度这些执行上下文，这既是每个“JavaScript活动”的执行场所，也是它们执行状态的一个瞬时快照。并且最后、最重要的是，这其实也是不同引擎进行效率优化的地方，例如，JIT（Just in time）引擎就工作在这个位置。
+
+执行上下文通过词法环境（lexicalEnvironment）和变量环境（variableEnvironment），来引用用户代码所需要的资源。更简单地说，一个执行上下文其实只需要包含两个环境的引用。
+
+##### 数据的交换
+
+在引擎中实现的代码（例如函数）被称为“原生函数（Native functions/method）”，类似地，在引擎中分配的数据称为“原生数据（Native data）”。
+
+##### 上下文的使用与管理
+
+在执行引擎中理解的是执行上下文，而在用户代码中直接映射的则是词法环境，这种处理机制是为了给执行引擎层面的管理与优化留下空间。但是，如果执行上下文有且仅有一个全局环境（或者顶层模块环境），那么后续的其他环境都是作为“执行栈”上新的帧来推入（Push）全局环境的，这意味着现实中的JavaScript只需要“一个执行栈”就可以完成代码的全部执行。
+
+但是有两个方面的原因导致ECMAScript约定了引擎内置的“任务（Job）管理机制”。其一，是需要有一个抽象概念来将引擎初始化等的内核处理与一般函数的脚本处理统一起来，以便于它们运行在同一个执行栈；其二，是执行栈需要一个标准的处理任务的接口，例如通过“队列（Queue）”来决定任务的处理次序。
+
+ECMAScript因此约定了JobQueue，并将所有能被执行栈处理的逻辑统称为“任务（Job）”。在此基础上，它还约定了任务在栈上的执行机制，称为“运行任务（RunJob）”。
+
+而在ES8及其之后的ECMAScript规范中，它被重新设计为一个无限循环，自动、主动地扫描JobQueue并处理队首的任务，这意味着用户代码以及相关的逻辑将无法接触到执行栈的管理过程（而只能通过执行队列来影响它）。
+
+## JavaScript的并行语言特性
+
+### 概述
+
+#### 并行语言特性在JavaScript中的历史
+
+事件回调的本质其实就是“消息收发”
+
+Promise是一种可在语言层面实现并行执行的模型。它封装了一个“剥离了时间特性的数据”，并代理在该数据上的一切行为。由于该数据是剥离了时间特性的，因此施于它的行为也是没有时序意义、可并行的。
+
+其一是用于支持Future并行模型的Promise，其二是执行环境中对执行栈的使用。
+
+Promise本身并不具有“并行执行”的特性，它的promise实例相当于是封装了数据的触发器：当数据就绪（Ready）时，就触发指定行为（Actions）。而后者（行为或反应），才是真正的执行逻辑。
+
+Promise作为构造器，其作用是将一个为futurel置值的函数关联（resolving或binding）到具体的promise实例。为了在后文中叙述方便，我们总是称Promise为“Promise()构造器”或“Promise类”；并将具体的promise实例称为“一个promise”，或“promise对象”。
+
+### Promise的核心机制
+
+■ 使用new Promise()来创建一个promise；或
+
+■ 使用类方法Promise.XXX()—包括.resolve()、.reject()、.all()或.race()等来获得一个promise；或
+
+任何方法得到的promise对象都具有.then()、.catch()等方法，也称为Promise.prototype.XXX()原型方法。JavaScript约定调用这些方法将“绝对”不会抛出异常，而这也是得到一个新的promise对象的第三种方法：
+
+■ 使用原型方法Promise.prototype.XXX()—promise.then()、.catch()和.finally()等将返回一个新的promise。
+
+并且，任何一种方法都是立即得到promise对象的。
+
+#### Promise的核心过程
+
+##### Then链
+
+最后，p.then()实际上是Promise.prototype.then这个原型方法。如上所述，它主要完成了三件事：
+
+■ 创建新的promise2对象；并且，
+
+■ 登记p与promise2之间的关系；然后，
+
+■ 将onFulfilled、onRejected关联给promise2的resolve置值器，并确保在p的数据就绪时调用onFulfilled、onRejected。
+
+##### Then链中promise2的置值逻辑
+
+在Then链中“产生”reject值的方法有两种，一种是如上例中所示的通过抛出异常来使JavaScript引擎捕获异常对象e2；另一种是通过Promise.reject()来显式地返回。
+
+这两种方法得到的reason是不同的：方法1得到一个错误对象作为reason值，并通常通过reason.message来表示异常原因；方法2得到一个不确定类型的reason值来表示原因，它可以是任意JavaScript数据（当然，这里的reason也可以是new Error()创建的错误对象）
+
+##### Then链对值的传递以及.catch()处理
+
+所以在任意长的Then链中，如果链的前端出现了rejected值，无论经过多少级.then()响应（且因为只有onFulfilled响应而未被处理），最终该rejected值都能持续向后传递并被“链尾的.catch()”响应到。这也带来了Promise机制在JavaScript中应用的第一原则
+
+➢ 始于promise，终于catch。
+
+####  Promise类与对象的基本应用
+
+##### Promise的其他类方法
+
+在Promise.all()和Promise.race()的所有可能的结果中，只有当Promise.all()的elements完全resolve时，会在.then()中得到一个与原始elements存在映射关系的数组，而其他结果都将是一个promise的值。
+
+##### promise对象的其他原型方法
+
+■ 默认.finally()方法不会改变Then链的前端所产生的数据（以及其状态）。
+
+##### 特例：将响应函数置为非函数
+
+在p.then（onFulfilled，onRejected）中，如果onFulfilled或onRejected传入非函数，则JavaScript将它们视同undefined处理；如果上述指定参数为undefined，则在相应状态触发时，将直接返回p的数据和状态作为promise2的结果。
+
+如果是调用p.catch（onRejected），由于它的逻辑等同于p.then（undefined，onRejected），因此效果也与.then()方法一致。
+
+如果是调用p.finally（onFinally），那么当onFinally传入非函数时，JavaScript处理的规则也与前述的p.then()是相同的—视作undefined。
+
+#### 执行逻辑
+
+这一内部过程决定了执行的连续性是依赖脚本执行过程并由Jobs间的连接关系来确定的。
+
+但这一点在ES8（2017）之后会略有不同。新规范中的引擎将自主启动一个称为RunJobs()的过程。这个过程是一个循环，其每个迭代都将由引擎扫描待执行的任务队列，并取出一个等待中的任务以最终执行它—如同执行上述ScriptJob一样。
+
+这两种处理逻辑也是略有区别的：
+
+■ 如果使用NextJob()，那么应该在任务Job执行结束时调用NextJob()来推动一次引擎—当然，其他Job在自己结束时也会这样做；而，
+
+■ 如果使用RunJobs()，不同的执行逻辑都只需将它们的任务Job放到队列中，引擎总是会在循环中扫描到该Job并执行它。
+
+##### 任务队列
+
+排队、唤醒和执行。
+
+##### 执行栈
+
+■ 当一个新的上下文入栈时，那么新的上下文必然是活动的。这正好对应于“在当前函数中调用新函数”，亦即是说，函数调用就是将目标函数的上下文入栈。与此相反的，
+
+■ 当有一个并行行为（例如Promise的Reactions）出现时，该行为在概念上由于是并行的而不能入栈（入栈就会激活它），因此需要通过EnqueueJob()过程将它作为一个PendingJob添加到任务队列（Job Queues）中。
+
+➢ 当前栈顶为空时，意味着引擎在闲（所有上下文都处理完毕）。
+
+因此：
+
+■ 当栈顶为空（即引擎在闲）时，从上述队列中取出PendingJob来执行即可。
+
+#### 与其他语言特性的交集
+
+#### 与函数式特性的交集：异步的函数
+
+##### 异步函数的值
+
+异步函数总是会返回一个promise对象。
+
+事实上，这个promise对象在实例化该异步函数之前就已经被创建好了。这样做会带来一个好处：当该函数不能在运行环境中被创建为一个（可执行的）实例时，所导致的异常可以用该promise的reject()置值器返回。
+
+在真正执行函数体（即调用foo()）的时候，ECMAScript规范约定函数体应放在当前的执行栈上“至少”被执行一次，直到它遇到一个可能的await，或者执行结束退出。JavaScript将启用一个新任务来调用p.then()所触发的过程。而且，如果异步函数自身因为await发生等待，那么JavaScript也会隐式地创建一个新的Promise并绑定给它的触发器，然后将它作为任务加入队列以便它们—这些等待值、获得值以及使用值去触发后续逻辑的过程—“在将来”都能并行执行。
+
+而现在，异步函数只是返回了那个promise对象p，无论它的值是否就绪。
+
+#####  异步函数中的await
+
+await可以等待任意的数据，包括对象、值和promise对象等。它在让出当前函数的执行权的同时会将一个PromiseJob放到队列中，以此确保等待必然发生且必将得到唤醒。该PromiseJob的resolve行为将总是会唤醒当前函数并回到挂起的执行点。由于在一个（异步函数的）上下文中的多个await同时只会有一个在等待，因此这个异步函数中的await唤醒动作也就会顺次地激活那些对应的Promise，并按该函数体的逻辑来最终返回结果值。
+
+await会将它的操作数（例如x）处理为一个promise对象。
+
+如果promise是rejected状态，那么await会将reject的原因（reason）作为错误抛出。而await抛出错误意味着它将潜在地执行一个类似throw e的操作，其中e是任意值，并且可以被try...catch捕获。
+
+#### 与动态特性的交集
+
+##### await在语义上的特点
+
+你可以将await视为在特定上下文（异步函数）中将Promise“转换为”它所代理数据的一种方式
+
+##### resolve行为与类型模糊
+
+如果值x本身也是一个Promise的实例呢？在这种情况下，JavaScript引擎事实上会先检测x的类型，并把为p初始化的一对resolve/reject置值器用作x的onXXX响应函数，这类似于调用x.then()。
+
+##### 通过动态创建函数来驱动异步特性
+
+ 调用p这个promise对象的resolve置值器。而后者（resolve置值器）将检测x。
+
+◆ 如果x是值或一般对象，将直接置为对象p所代理的数据；否则
+
+◆ 是一个thenable对象（包括是一个Promise及其子类的对象），会调用x.then()来为p置值。
+
+其中最后一步就会导致引擎向RunJobs处理的队列中推入“通过调用x.then()来异步地使用p的置值器，以向p写入数据x”的任务，这个任务称为PromiseResolveThenableJob。
+
+在上述的整个过程中，由于本质上对象p仍然是通过调用new Promise()来产生的，所以JavaScript将隐式地为对象p生成一个executor函数（以调用Promise构造器），并且同样隐式地生成resolve/reject置值器对，这些隐式创建的行为称为“创建内建函数”。
+
+另一类加入PromiseJobs的任务称为PromiseReactionJob，是在promise对象就绪时处理所有reactions队列中的、异步调用的函数时才用到的。所有PromiseJob任务本身是一个函数，它加入执行上下文栈的只是该函数的一个闭包。
+
+亦即是说，所谓异步调用，要么是在p就绪时通过p.then()作为PromiseResolveThenableJob放到了执行上下文栈中，要么是在p未就绪时放在它的reactions队列中，并在将来作为PromiseReactionJob放到执行上下文栈中。最终，所有这些任务都会由RunJobs()过程在扫描上下文栈时处理。
+
+一旦异步调用（即它们的函数闭包）被放在了RunJobs()将要处理的栈上，那么它就总是会被处理。而关键之处在于，它们被执行的时间只取决于何时被放到栈上（这与Promise中数据就绪的时间相关），而不取决于它们何时被调用，因此这些调用之间是无时序依赖的，即是异步的。
+
+#### 对结构化特性带来的冲击
+
+##### 迟来的finally
+
+这个处理逻辑与try...catch...finally结构的唯一区别在于：onFinally()中的任何返回值都被忽略了，而try语句的finally{}块可以通过return来返回值。
+
+二者在结构化设计上的差异在于：try语句中的finally块被理解为一个程序出口，而p.finally()本身不应被理解为Then链上有意义的值。
+
+##### 异步方法与存取器
+
+```
+Object.definePropertyEx = function(instance, name, desc) {
+	return Object.defineProperty(instance, name, Object.setPrototypeOf(desc, Object.getPrototypeOf(isntance)));
+}
+
+Object.definePropertyEx(MyObjectEx.prototype, 'data', {
+	async ["get"]() {
+		return super.data + 2;
+	}
+});
+
+obj5 = Object.definePropertyEx(new Object, 'data', {
+	async["get"]() {
+		return super.data + 3;
+	}
+})
+
+Object.getPrototypeOf(obj5).data = 100;
+
+obj5.data.then(consoel.log); // 103
+
+obj6 = new MyObjectEx;
+obj6.data.then(console.log); // 102
+```
+
+如果在你的系统中，父类已经使用了异步方法来作为存取器，那么子类中的实现将略有区别。
+
+```
+class MyObject{}
+class MyObjectEx extends MyObject{}
+
+Object.definePropertyEx(MyObject.prototype, 'data', {
+	async ["get"]() {
+		return 100;
+	}
+})
+
+
+Object.definePropertyEx(MyObjectEx.prototype, 'data', {
+	async ["get"]() {
+		return await super.data + 1;
+	}
+})
+
+obj7 = new MyObjectEx;
+obj7.data.then(console.log); // 101
+```
+
+### JavaScript中对并发的支持
+
+#### SharedArrayBuffer
+
+ECMAScript规范中所描述的SharedArrayBuffer是一种共享存储的具体实现，这意味着通常在同一时刻只能有一个线程对SharedArrayBuffer发起写操作。
+
+#### Atomics
+
+工作线程总是独占地、不被中断地完成在指定位置的操作。
+
+### 在分布式网络环境中的并行执行
+
+##### 在集群中创建任务中心
+
+这个任务中心包括所有分布式任务的脚本副本，可以由节点下载并缓存到本地。任何任务都有唯一的、与任务文本相关的taskId，所以任务代码的任何变化都将导致taskId不同。
+
+##### 并行的方法
+
+分布（distributed）、确认（promised）和否决（rejected）
