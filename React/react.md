@@ -84,3 +84,4 @@
 82. Redux的流程？怎么给项目关联store？怎么只获取自己需要的state？
 83. react实现一个定时器，封装一个hook
 84. hooks用过吗？聊聊react中class组件和函数组件的区别
+85. usememo和usecallback的区别
