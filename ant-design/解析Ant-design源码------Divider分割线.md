@@ -75,8 +75,6 @@ classString，根据不同的属性值，获得不同的className。
 
 dom结构，根据是否有children传入，渲染不同的dom结构。
 
-
-
 ### 水平分割线
 
 默认为水平分割线，可在中间加入文字。
@@ -233,7 +231,7 @@ ReactDOM.render(
     }
   }
 
-	&-horizontal&-with-text-left {
+    &-horizontal&-with-text-left {
     &::before {
       top: 50%;
       width: @divider-orientation-margin;
@@ -261,7 +259,7 @@ ReactDOM.render(
     display: inline-block;
     padding: 0 @divider-text-padding;
   }
-  
+
   &-horizontal&-with-text&-dashed {
     border-top: 0;
 
@@ -372,16 +370,13 @@ ReactDOM.render(
 }
 ```
 
-
-
 ### API
 
-| 参数        | 说明                       | 类型                          | 默认值       | 版本  |
-| ----------- | -------------------------- | ----------------------------- | ------------ | ----- |
-| className   | 分割线样式类               | string                        | -            |       |
-| dashed      | 是否虚线                   | boolean                       | false        |       |
-| orientation | 分割线标题的位置           | `left` \| `right` \| `center` | `center`     |       |
+| 参数          | 说明            | 类型                            | 默认值          | 版本    |
+| ----------- | ------------- | ----------------------------- | ------------ | ----- |
+| className   | 分割线样式类        | string                        | -            |       |
+| dashed      | 是否虚线          | boolean                       | false        |       |
+| orientation | 分割线标题的位置      | `left` \| `right` \| `center` | `center`     |       |
 | plain       | 文字是否显示为普通正文样式 | boolean                       | false        | 4.2.0 |
-| style       | 分割线样式对象             | CSSProperties                 | -            |       |
-| type        | 水平还是垂直类型           | `horizontal` \| `vertical`    | `horizontal` |       |
-
+| style       | 分割线样式对象       | CSSProperties                 | -            |       |
+| type        | 水平还是垂直类型      | `horizontal` \| `vertical`    | `horizontal` |       |

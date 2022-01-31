@@ -12,7 +12,7 @@
 
 在多人协同开发时为了避免样式冲突，选择器越来越复杂，很容易形成不同的命名风格，很难统一。样式变多后，命名将更加混乱，将导致在项目中css命名维护困难的问题。虽然可以使用不同的命名风格去规范命名问题比如bem，但是是通过人工去命名的，说白懒是驱动程序猿的第一生产力...
 
--  依赖引入复杂
+- 依赖引入复杂
 
 依赖管理不彻底，组件应该相互独立，引入一个组件时，应该只引入它所需要的 CSS 样式。但现在的做法是除了要引入 JS，还要再引入它的 CSS，而且 Saas/Less 很难实现对每个组件都编译出单独的 CSS，引入所有模块的 CSS 又造成浪费。JS 的模块化已经非常成熟，如果能让 JS 来管理 CSS 依赖是很好的解决办法。Webpack 的 `css-loader` 提供了这种能力。
 
@@ -68,7 +68,7 @@ css?modules&localIdentName=[name]__[local]-[hash:base64:5]
 
 ```css
 .test {
-	width: 100px
+    width: 100px
 }
 ```
 
@@ -81,11 +81,11 @@ import styles from './demo.module.less'
 import  { test } from './demo.module.less'
 
 function A () {
-	return (
-		<div classNames={styles.test}>
-		adasdsa
-		</div>
-	)
+    return (
+        <div classNames={styles.test}>
+        adasdsa
+        </div>
+    )
 }
 ```
 
@@ -156,4 +156,3 @@ https://segmentfault.com/a/1190000004300065
 https://cloud.tencent.com/developer/article/1036799
 
 https://blog.csdn.net/qq_26733915/article/details/54313492
-

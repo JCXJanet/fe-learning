@@ -144,17 +144,17 @@ HTML5 的一些最有趣的新特性：
 </html>
 ```
 
-| 属性                                                         | 值                 | 描述                                                         |
-| :----------------------------------------------------------- | :----------------- | :----------------------------------------------------------- |
-| [autoplay](https://www.runoob.com/tags/att-video-autoplay.html) | autoplay           | 如果出现该属性，则视频在就绪后马上播放。                     |
-| [controls](https://www.runoob.com/tags/att-video-controls.html) | controls           | 如果出现该属性，则向用户显示控件，比如播放按钮。             |
-| [height](https://www.runoob.com/tags/att-video-height.html)  | *pixels*           | 设置视频播放器的高度。                                       |
-| [loop](https://www.runoob.com/tags/att-video-loop.html)      | loop               | 如果出现该属性，则当媒介文件完成播放后再次开始播放。         |
-| [muted](https://www.runoob.com/tags/att-video-muted.html)    | muted              | 如果出现该属性，视频的音频输出为静音。                       |
-| [poster](https://www.runoob.com/tags/att-video-poster.html)  | *URL*              | 规定视频正在下载时显示的图像，直到用户点击播放按钮。         |
-| [preload](https://www.runoob.com/tags/att-video-preload.html) | auto metadata none | 如果出现该属性，则视频在页面加载时进行加载，并预备播放。如果使用 "autoplay"，则忽略该属性。 |
-| [src](https://www.runoob.com/tags/att-video-src.html)        | *URL*              | 要播放的视频的 URL。                                         |
-| [width](https://www.runoob.com/tags/att-video-width.html)    | *pixels*           | 设置视频播放器的宽度。                                       |
+| 属性                                                              | 值                  | 描述                                                  |
+|:--------------------------------------------------------------- |:------------------ |:--------------------------------------------------- |
+| [autoplay](https://www.runoob.com/tags/att-video-autoplay.html) | autoplay           | 如果出现该属性，则视频在就绪后马上播放。                                |
+| [controls](https://www.runoob.com/tags/att-video-controls.html) | controls           | 如果出现该属性，则向用户显示控件，比如播放按钮。                            |
+| [height](https://www.runoob.com/tags/att-video-height.html)     | *pixels*           | 设置视频播放器的高度。                                         |
+| [loop](https://www.runoob.com/tags/att-video-loop.html)         | loop               | 如果出现该属性，则当媒介文件完成播放后再次开始播放。                          |
+| [muted](https://www.runoob.com/tags/att-video-muted.html)       | muted              | 如果出现该属性，视频的音频输出为静音。                                 |
+| [poster](https://www.runoob.com/tags/att-video-poster.html)     | *URL*              | 规定视频正在下载时显示的图像，直到用户点击播放按钮。                          |
+| [preload](https://www.runoob.com/tags/att-video-preload.html)   | auto metadata none | 如果出现该属性，则视频在页面加载时进行加载，并预备播放。如果使用 "autoplay"，则忽略该属性。 |
+| [src](https://www.runoob.com/tags/att-video-src.html)           | *URL*              | 要播放的视频的 URL。                                        |
+| [width](https://www.runoob.com/tags/att-video-width.html)       | *pixels*           | 设置视频播放器的宽度。                                         |
 
 ### media
 
@@ -169,17 +169,17 @@ media 属性规定被链接文档将显示在什么设备上。
 
 media 属性用于为不同的媒介类型规定不同的样式。
 
-| 值         | 描述                                         |
-| :--------- | :------------------------------------------- |
-| screen     | 计算机屏幕（默认）。                         |
+| 值          | 描述                     |
+|:---------- |:---------------------- |
+| screen     | 计算机屏幕（默认）。             |
 | tty        | 电传打字机以及类似的使用等宽字符网格的媒介。 |
 | tv         | 电视机类型设备（低分辨率、有限的滚屏能力）。 |
-| projection | 放映机。                                     |
-| handheld   | 手持设备（小屏幕、有限带宽）。               |
-| print      | 打印预览模式/打印页面。                      |
-| braille    | 盲人点字法反馈设备。                         |
-| aural      | 语音合成器。                                 |
-| all        | 适用于所有设备。                             |
+| projection | 放映机。                   |
+| handheld   | 手持设备（小屏幕、有限带宽）。        |
+| print      | 打印预览模式/打印页面。           |
+| braille    | 盲人点字法反馈设备。             |
+| aural      | 语音合成器。                 |
+| all        | 适用于所有设备。               |
 
 ### img标签的title和alt有什么区别
 

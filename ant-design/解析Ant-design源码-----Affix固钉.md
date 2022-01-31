@@ -259,11 +259,11 @@ function getDefaultTarget() {
 private getTargetFunc() {
   const { getTargetContainer } = this.context;
   const { target } = this.props;
-  
+
   if (target !== undefined) {
     return target;
   }
-  
+
   return getTargetContainer || getDefaultTarget;
 }
 ```
@@ -326,18 +326,18 @@ updatePosition() {
 lazyUpdatePosition() {
   const targetFunc = this.getTargetFunc();
   const { affixStyle } = this.state;
-  
+
   if (targetFunc && affixStyle) {
     const offsetTop = this.getOffsetTop();
     const offsetBottom = this.getOffsetBottom();
-    
+
     const targetNode = targetFunc();
     if (targetNode && this.placeholderNode) {
       const targetRect = getTargetRect(targetNode);
       const placeholderReact = getTargetRect(this.placeholderNode);
       const fixedTop = getFixedTop(placeholderReact, targetRect, offsetTop);
       const fixedBottom = getFixedBottom(placeholderReact, targetRect, offsetBottom);
-      
+
       if (
       (fixedTop !== undefined && affixStyle.top === fixedTop) ||
       (fixedBottom !== undefined && affixStyle.bottom === fixedBottom)) {
@@ -363,15 +363,15 @@ measure = () => {
   if (status !== AffixStatus.Prepare || !this.fixedNode || !this.placeholderNode || !targetFunc ) {
     return;
   }
-  
+
   const offsetTop = this.getOffsetTop();
   const offsetBottom = this.getOffsetBottom();
-  
+
   const targetNode = targetFunc();
   if (!targetNode) {
     return;
   }
-  
+
   const newState: Partial<AffixState> = {
     status: AffixStatus.None,
   }
@@ -379,7 +379,7 @@ measure = () => {
   const placeholderReact = getTargetRect(this.placeholderNode);
   const fixedTop = getFixedTop(placeholderReact, targetRect, offsetTop);
   const fixedBottom = getFixedBottom(placeholderReact, targetRect, offsetBottom);
-  
+
   if (fixedTop !== undefined) {
     newState.affixStyle = {
       position: 'fixed',
@@ -403,12 +403,12 @@ measure = () => {
       height: placeholderReact.height,
     };
   }
-  
+
   newState.lastAffix = !!newState.affixStyle;
   if (onChange && lastAffix !== newState.lastAffix) {
     onChange(newState.lastAffix);
   }
-  
+
   this.setState(newState as AffixState)
 }
 ```
@@ -439,7 +439,7 @@ componentDidUpdate(prevProps: AffixProps) {
   if (targetFunc) {
     newTarget = targetFunc() || null;
   }
-  
+
   if (prevTarget !== newTarget) {
     removeObserveTarget(this);
     if (newTarget) {
@@ -448,14 +448,14 @@ componentDidUpdate(prevProps: AffixProps) {
     }
     this.setState({ prevTarget: newTarget });
   }
-  
+
   if (
     prevProps.offsetTop !== this.props.offsetTop ||
     prevProps.offsetBottom !== this.props.offsetBottom
   ) {
     this.updatePosition()
   }
-  
+
   this.measure();
 }
 ```
@@ -483,14 +483,14 @@ render = () => {
   const className = classNames({
     [getPrefixCls)('affix', prefixCls)]: !!affixStyle,
   });
-  
+
   let props = omit(this.props, ['prefixCls', 'offsetTop', 'offsetBottom', 'target', 'onChange']);
-  
+
   if (process.env.NODE_ENV === 'test') {
     props = omit(props as typeof props & { onTestUpdatePosition: any}, ['onTestUpdatePosition'])
   }
-	
-	return (
+
+    return (
     <ResizeObserver
       onResize={() => {
         this.updatePosition();
