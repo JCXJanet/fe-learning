@@ -54,6 +54,55 @@ document.addEventListener("visibilitychange", handleVisibilityChange, false);
 
 
 
+1.边界值问题
+
+​	使用text-overflow,如果要使这个属性生效必须使元素有宽度。
+
+```css
+*{
+	text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+```
+
+2.布局问题
+
+​	absolute、fixed
+
+​	flex
+
+可以考虑少使用div，多使用类似ul、li的元素。
+
+设计的原则是：能够让元素在正常的文档流下布局则不适用absolute，如果必要使用absolute则必须要注意子绝父相的道理。
+
+3.禁止双击放大
+
+```javascript
+<meta name="viewport" content="width=device-width,inital-scale=1.0,maximum-scale=1.0,user-scale=0">
+
+window.onload=function() {
+  document.addEventListener('touchstart',function (event){
+    if(event.touches.length>1){
+      event.preventDefault();
+    }
+  });
+  var lastTouchEnd = 0;
+  document.addEventListener('touchend',function (event){
+    var now = (new Date()).getTime();
+    if(now -lastTouchEnd <= 300){
+      event.preventDefault();
+    }
+    lastTouchEnd = now;
+  },false);
+  document.addEventListener('gesturestart',function (event){
+    event.preventDefault();
+  });
+}
+```
+
+4.CSS overscroll-behavior让滚动嵌套时父滚动不触发、scroll-behavior用于滚动平滑、scroll snap用于滚动定位加上文本的滚动边界。
+
 在模板字符串中，空格、缩进、换行都会被保留
 
   
