@@ -19,6 +19,12 @@
 
 默认情况下，pnpm 使用软链的方式将项目的直接依赖添加进模块文件夹的根目录。 
 
+### 过滤filter
+
+```
+pnpm <command> --filter <package_selector>
+```
+
 ### pnpm run
 
 #### 与 `npm run` 的差异
