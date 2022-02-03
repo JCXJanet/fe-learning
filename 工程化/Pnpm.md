@@ -33,3 +33,113 @@ pnpm <command> --filter <package_selector>
 
 如果出于某种原因您需要 npm 的前置、后置钩子脚本，可使用`enable-pre-post-scripts` 选项。
 
+### pnpm add
+
+安装软件包及其依赖的任何软件包。 默认情况下，任何新软件包都安装为生产依赖项。
+
+| Command              | 含义                          |
+| -------------------- | ----------------------------- |
+| `pnpm add sax`       | 保存到 `dependencies`         |
+| `pnpm add -D sax`    | 保存到 `devDependencies`      |
+| `pnpm add -O sax`    | 保存到 `optionalDependencies` |
+| `pnpm add sax@next`  | 安装 `next` tag               |
+| `pnpm add sax@3.0.0` | 安装指定版本 `3.0.0`          |
+
+`pnpm add package-name` 默认会从 [npm registry](https://www.npmjs.com/)安装最新的 `package-name`.
+
+如果在 workspace 中执行，该命令将首先去检查这个 worksapce 中的其他项目是否已经使用了这个指定的包。 如果是的话，就使用这个包的版本范围来进行安装。
+
+您可以通过以下方式安装包:
+
+- tag: `pnpm add express@nightly`
+- version: `pnpm add express@1.0.0`
+- version range: `pnpm add express@2 react@">=0.1.0 <0.2.0"`
+
+#### 从 workspace 安装
+
+需要注意的是当我们使用 [workspace](https://pnpm.io/zh/workspaces)安装依赖时, 会从已配置的源处进行安装，当然取决于是否设置了 [`link-workspace-packages`](https://pnpm.io/zh/workspaces#link-workspace-packages),以及是否使用了 [`workspace: range protocol`](https://pnpm.io/zh/workspaces#workspace-ranges-workspace).
+
+#### 从本地安装
+
+从本地安装的两种方法:
+
+1. 源码文件 (`.tar`, `.tar.gz`, or `.tgz`)
+2. 本地目录
+
+示例：
+
+```sh
+pnpm add ./package.tar.gz
+pnpm add ./some-directory
+```
+
+当从目录安装时，会在当前项目目录中生成一个 symlink `node_modules`, 因此这里跟执行 `pnpm link` 是一致的.
+
+#### 从远端安装 Tar 包
+
+参数必须是一个可访问的 URL, "http://" 或者 "https://"开头的.
+
+示例：
+
+```sh
+pnpm add https://github.com/indexzero/forever/tarball/v0.5.6
+```
+
+#### 从 git 安装
+
+```sh
+pnpm add <git remote url>
+```
+
+通过 git clone, 从 git 作者处安装包. 可以用协议准确的指定 git 作者 For example, `pnpm add github:user/repo`
+
+您可以通过以下方式从 Git 安装:
+
+- 来自 master 的最新提交： `pnpm add kevva/is-positive`
+- 提交: `pnpm add keva/is-positive#97edff6f525f192a3f83cea194765f769ae2678`
+- 分支: `pnpm add keva/is-positive#master`
+- 版本范围： `pnpm add kevva/is-positive#semver:^2.0.0`
+
+#### 选项
+
+##### --save-prod, -P
+
+将指定的软件包安装为常规的 `dependencies`。
+
+##### --save-dev, -D
+
+将指定的 packages 安装为 `devDependencies`。
+
+##### --save-optional, -O
+
+将指定的 packages 安装为 `optionalDependencies`。
+
+##### --save-exact, -E
+
+保存的依赖会被指定为一个确切的版本, 而不是使用 pnpm 的默认 semver range operator 配置.
+
+##### --save-peer
+
+添加于：v3.2.0
+
+使用 `--save-peer` 会添加一个或多个 `peerDependencies` 的 package 并安装到 dev dependencies.
+
+##### --ignore-workspace-root-check, -W
+
+Added in: v3.6.0
+
+除非使用`--ignore-workspace-root-check` 或 `-W`来标记. 否则在 root workspace 包添加依赖项时会失败.
+
+例如, `pnpm add debug -W`.
+
+##### --global
+
+安装全局依赖
+
+##### --workspace
+
+添加于：v4.4.0
+
+仅添加在 workspace 找到的依赖项.
+
+##### --filter <package_selector>
