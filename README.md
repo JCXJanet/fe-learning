@@ -112,7 +112,7 @@ window.onload=function() {
 
 3.sql本身字段
 				
-				TCP/IP协议族按层次分别分为以下4层：应用层、传输层、网络层和数据链路层。
+TCP/IP协议族按层次分别分为以下4层：应用层、传输层、网络层和数据链路层。
 
 ARP是一种用以解析地址的协议，根据通信方的IP地址就可以反查出对应的MAC地址。
 
@@ -121,4 +121,36 @@ ARP是一种用以解析地址的协议，根据通信方的IP地址就可以反
 HTTP是一种不保存状态，即无状态（stateless）协议。
 
 因为HTTP1.0是无状态协议，虽然HTTP/1.1虽然是无状态协议，但为了实现期望的保持状态功能，于是引入了Cookie技术。
+
+在HTTP/1.1中，所有的连接默认都是持久连接
+				
+Cookie会根据从服务器端发送的响应报文内的一个叫做Set-Cookie的首部字段信息，通知客户端保存Cookie。当下次客户端再往该服务器发送请求时，客户端会自动在请求报文中加入Cookie值后发送出去。
+
+
+
+应用HTTP/1.1版本的缓存服务器遇到同时存在Expires首部字段的情况时，会优先处理max-age指令，而忽略掉Expires首部字段。而HTTP/1.0版本的缓存服务器的情况却相反，max-age指令会被忽略掉。
+
+
+
+Connection首部字段具备如下两个作用。
+
+●控制不再转发给代理的首部字段
+
+●管理持久连接
+
+
+
+HttpOnly属性
+
+Cookie的HttpOnly属性是Cookie的扩展功能，它使JavaScript脚本无法获得Cookie。其主要目的为防止跨站脚本攻击（Cross-site scripting,XSS）对Cookie的信息窃取。
+
+首部字段X-Frame-Options属于HTTP响应首部，用于控制网站内容在其他Web网站的Frame标签内的显示问题。其主要目的是为了防止点击劫持（clickjacking）攻击。
+
+首部字段X-Frame-Options有以下两个可指定的字段值。
+
+● DENY：拒绝
+
+● SAMEORIGIN：仅同源域名下的页面（Top-level-browsing-context）匹配时许可。（比如，当指定http://hackr.jp/sample.html页面为SAMEORIGIN时，那么hackr.jp上所有页面的frame都被允许可加载该页面，而example.com等其他域名的页面就不行了）
+
+在采用SSL后，HTTP就拥有了HTTPS的加密、证书和完整性保护这些功能。
 
