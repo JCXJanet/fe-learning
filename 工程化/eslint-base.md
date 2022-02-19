@@ -158,4 +158,4 @@ eslint:recommended:表示引入eslint的核心功能，并且报告一些常见�
  
  eslint-config-airbnb 为Airbnb标准,它依赖eslint, eslint-plugin-import, eslint-plugin-react, and eslint-plugin-jsx-a11y等插件，并且对各个插件的版本有所要求。
  
-eslint-config-standard 它是一些前端工程师自定的标准。
+ eslint-config-standard 它是一些前端工程师自定的标准。
