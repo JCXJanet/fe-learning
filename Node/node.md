@@ -1,16 +1,8 @@
 ## Node
 
-1. express的使用
-2. 命令行输入node 系统如何找到node程序
-3. 开发机上多个版本 node共存怎么实现
-4. Node的Express中间件你是怎么理解的
-5. node和java啥区别
-6. node.js 相对于原生 js 有哪些区别？
-7. 中间件的实现原理
 8. node写图片压缩
 10. node有哪些创建子进程的方式
 11. node进程通信
-12. koa的使用
 13. 知道 npm 怎么去查找包的吗
 14. 把fs.readFile的callback回调函数封装成Promise
 15. 把fs中所有的callback回调函数，封装成Promise
@@ -24,7 +16,16 @@
 23. pm2有哪些功能：守护进程，负载均衡
 24. node中的require是怎么实现的？包括模块的寻找和缓存？
 
+## npm 原理
 
+## 开发机上多个版本 node共存怎么实现
+[1] 安装指定的 nodejs 版本：nvm install 8.12.0
+
+[2] 查看已经安装的 nodejs 列表：nvm ls
+
+[3] 指定当前使用的 nodejs 版本：nvm use 8.12.0
+
+[4] 查看当前使用的 nodejs 版本：node -v
 
 ## node核心内置类库(事件，流，文件，网络等)
 

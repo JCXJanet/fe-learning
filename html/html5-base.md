@@ -604,7 +604,7 @@ HTML本地存储提供了两个在客户端存储数据的对象
 
 ```
 windows.localStorage--存储没有截止日期的数据
-windows.sessionStorage--针对一个sessiob来存储数据（当关闭浏览器标签页时数据会丢失）
+windows.sessionStorage--针对一个session来存储数据（当关闭浏览器标签页时数据会丢失）
 ```
 
 ```
@@ -845,7 +845,7 @@ HTML5使用ArrayBufferView对象以一种标准格式来表示ArrayBuffer缓存�
 
 ### FileSystem API //文件操作
 
-1.支持跨域通信，但是每个域的文件系统智能呗该域专用，不能被其他域访问。
+1.支持跨域通信，但是每个域的文件系统智能被该域专用，不能被其他域访问。
 
 2.存储数据是永久的，不能被浏览器随意删除，但是存储在临时文件系统中的数据可以被浏览器自行删除。
 
