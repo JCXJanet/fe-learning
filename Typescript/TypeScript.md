@@ -420,6 +420,27 @@ TypeScript里，`undefined`和`null`两者各自有自己的类型分别叫做`u
 
 默认情况下`null`和`undefined`是所有类型的子类型。 就是说你可以把 `null`和`undefined`赋值给`number`类型的变量。
 
+## `unknown`
+
+`unknown`类型代表*任何*值。这类似于`any`类型，但更安全，因为用值做任何事情是不合法的`unknown`
+
+## 函数重载
+
+```ts
+function makeDate(timestamp: number): Date;
+function makeDate(m: number, d: number, y: number): Date;
+function makeDate(mOrTimestamp: number, d?: number, y?: number): Date {
+  if (d !== undefined && y !== undefined) {
+    return new Date(y, mOrTimestamp, d);
+  } else {
+    return new Date(mOrTimestamp);
+  }
+}
+const d1 = makeDate(12345678);
+const d2 = makeDate(5, 5, 5);
+const d3 = makeDate(1, 3);
+```
+
 ## Never
 
 `never`类型表示的是那些永不存在的值的类型。 例如， `never`类型是那些总是会抛出异常或根本就不会有返回值的函数表达式或箭头函数表达式的返回值类型； 变量也可能是 `never`类型，当它们被永不为真的类型保护所约束时。
@@ -958,3 +979,381 @@ f(): called
 2. *参数装饰器*，然后依次是*方法装饰器*，*访问符装饰器*，或*属性装饰器*应用到每个静态成员。
 3. *参数装饰器*应用到构造函数。
 4. *类装饰器*应用到类。
+
+
+
+## Partial<Type>
+
+构造一个所有属性都`Type`设置为可选的类型。此实用程序将返回一个表示给定类型的所有子集的类型。
+
+```
+interface Todo {
+  title: string;
+  description: string;
+}
+ 
+function updateTodo(todo: Todo, fieldsToUpdate: Partial<Todo>) {
+  return { ...todo, ...fieldsToUpdate };
+}
+ 
+const todo1 = {
+  title: "organize desk",
+  description: "clear clutter",
+};
+ 
+const todo2 = updateTodo(todo1, {
+  description: "throw out trash",
+});
+```
+
+## Required<Type>
+
+```
+interface Props {
+  a?: number;
+  b?: string;
+}
+ 
+const obj: Props = { a: 5 };
+ 
+const obj2: Required<Props> = { a: 5 };
+// Property 'b' is missing in type '{ a: number; }' but required in type 'Required<Props>'.
+```
+
+## Readonly<Type>
+
+构造一个所有属性都`Type`设置为的类型`readonly`，这意味着构造类型的属性不能重新分配。
+
+```
+interface Todo {
+  title: string;
+}
+ 
+const todo: Readonly<Todo> = {
+  title: "Delete inactive users",
+};
+ 
+todo.title = "Hello";
+// Cannot assign to 'title' because it is a read-only property.
+```
+
+## Record<Keys, Type>
+
+构造一个对象类型，其属性键为`Keys`，其属性值为`Type`。此实用程序可用于将一种类型的属性映射到另一种类型。
+
+```
+interface CatInfo {
+  age: number;
+  breed: string;
+}
+ 
+type CatName = "miffy" | "boris" | "mordred";
+ 
+const cats: Record<CatName, CatInfo> = {
+  miffy: { age: 10, breed: "Persian" },
+  boris: { age: 5, breed: "Maine Coon" },
+  mordred: { age: 16, breed: "British Shorthair" },
+};
+ 
+cats.boris;
+```
+
+## Pick<Type, Keys>
+
+通过从 中选择一组属性`Keys`（字符串文字或字符串文字的并集）来构造类型`Type`。
+
+```
+interface Todo {
+  title: string;
+  description: string;
+  completed: boolean;
+}
+ 
+type TodoPreview = Pick<Todo, "title" | "completed">;
+ 
+const todo: TodoPreview = {
+  title: "Clean room",
+  completed: false,
+};
+```
+
+## Omit<Type, Keys>
+
+`Type`通过从中选择所有属性然后删除`Keys`（字符串文字或字符串文字的联合）来构造类型。
+
+```
+interface Todo {
+  title: string;
+  description: string;
+  completed: boolean;
+  createdAt: number;
+}
+ 
+type TodoPreview = Omit<Todo, "description">;
+ 
+const todo: TodoPreview = {
+  title: "Clean room",
+  completed: false,
+  createdAt: 1615544252770,
+};
+ 
+todo;
+ 
+const todo: TodoPreview
+ 
+type TodoInfo = Omit<Todo, "completed" | "createdAt">;
+ 
+const todoInfo: TodoInfo = {
+  title: "Pick up kids",
+  description: "Kindergarten closes at 5pm",
+};
+ 
+todoInfo;
+```
+
+## Exclude<UnionType, ExcludedMembers>
+
+`UnionType`通过从所有可分配给 的联合成员中排除来构造一个类型`ExcludedMembers`。
+
+```
+type T0 = Exclude<"a" | "b" | "c", "a">;
+     
+type T0 = "b" | "c"
+type T1 = Exclude<"a" | "b" | "c", "a" | "b">;
+     
+type T1 = "c"
+type T2 = Exclude<string | number | (() => void), Function>;
+     
+type T2 = string | number
+```
+
+## Extract<Type, Union>
+
+`Type`通过从可分配给 的所有联合成员中提取来构造一个类型`Union`。
+
+```
+type T0 = Extract<"a" | "b" | "c", "a" | "f">;
+     
+type T0 = "a"
+type T1 = Extract<string | number | (() => void), Function>;
+     
+type T1 = () => void
+```
+
+## NonNullable<Type>
+
+`null`通过 exclude和`undefined`from构造一个类型`Type`。
+
+```
+type T0 = NonNullable<string | number | undefined>;
+     
+type T0 = string | number
+type T1 = NonNullable<string[] | null | undefined>;
+     
+type T1 = string[]
+```
+
+## Parameters<Type>
+
+从函数类型的参数中使用的类型构造元组类型`Type`。
+
+```
+declare function f1(arg: { a: number; b: string }): void;
+ 
+type T0 = Parameters<() => string>;
+     
+type T0 = []
+type T1 = Parameters<(s: string) => void>;
+     
+type T1 = [s: string]
+type T2 = Parameters<<T>(arg: T) => T>;
+     
+type T2 = [arg: unknown]
+type T3 = Parameters<typeof f1>;
+     
+type T3 = [arg: {
+    a: number;
+    b: string;
+}]
+type T4 = Parameters<any>;
+     
+type T4 = unknown[]
+type T5 = Parameters<never>;
+     
+type T5 = never
+type T6 = Parameters<string>;
+// Type 'string' does not satisfy the constraint '(...args: any) => any'.
+     
+type T6 = never
+type T7 = Parameters<Function>;
+Type 'Function' does not satisfy the constraint '(...args: any) => any'.
+//  Type 'Function' provides no match for the signature '(...args: any): any'.
+     
+type T7 = never
+```
+
+## ConstructorParameters<Type>
+
+从构造函数类型的类型构造元组或数组类型。它产生一个包含所有参数类型的元组类型（或者`never`如果`Type`不是函数的类型）。
+
+```
+type T0 = ConstructorParameters<ErrorConstructor>;
+     
+type T0 = [message?: string]
+type T1 = ConstructorParameters<FunctionConstructor>;
+     
+type T1 = string[]
+type T2 = ConstructorParameters<RegExpConstructor>;
+     
+type T2 = [pattern: string | RegExp, flags?: string]
+type T3 = ConstructorParameters<any>;
+     
+type T3 = unknown[]
+ 
+type T4 = ConstructorParameters<Function>;
+// Type 'Function' does not satisfy the constraint 'abstract new (...args: any) => any'.
+// Type 'Function' provides no match for the signature 'new (...args: any): any'.
+     
+type T4 = never
+```
+
+## ReturnType<Type>
+
+构造一个由 function 的返回类型组成的类型`Type`。
+
+```
+declare function f1(): { a: number; b: string };
+ 
+type T0 = ReturnType<() => string>;
+     
+type T0 = string
+type T1 = ReturnType<(s: string) => void>;
+     
+type T1 = void
+type T2 = ReturnType<<T>() => T>;
+     
+type T2 = unknown
+type T3 = ReturnType<<T extends U, U extends number[]>() => T>;
+     
+type T3 = number[]
+type T4 = ReturnType<typeof f1>;
+     
+type T4 = {
+    a: number;
+    b: string;
+}
+type T5 = ReturnType<any>;
+     
+type T5 = any
+type T6 = ReturnType<never>;
+     
+type T6 = never
+type T7 = ReturnType<string>;
+// Type 'string' does not satisfy the constraint '(...args: any) => any'.
+     
+type T7 = any
+type T8 = ReturnType<Function>;
+// Type 'Function' does not satisfy the constraint '(...args: any) => any'.
+// Type 'Function' provides no match for the signature '(...args: any): any'.
+     
+type T8 = any
+```
+
+## InstanceType<Type>
+
+构造一个类型，该类型由构造函数的实例类型组成`Type`。
+
+```
+class C {
+  x = 0;
+  y = 0;
+}
+ 
+type T0 = InstanceType<typeof C>;
+     
+type T0 = C
+type T1 = InstanceType<any>;
+     
+type T1 = any
+type T2 = InstanceType<never>;
+     
+type T2 = never
+type T3 = InstanceType<string>;
+// Type 'string' does not satisfy the constraint 'abstract new (...args: any) => any'.
+     
+type T3 = any
+type T4 = InstanceType<Function>;
+// Type 'Function' does not satisfy the constraint 'abstract new (...args: any) => any'.
+// Type 'Function' provides no match for the signature 'new (...args: any): any'.
+     
+type T4 = any
+```
+
+## ThisParameterType<Type>
+
+提取函数类型的[this](https://www.typescriptlang.org/docs/handbook/functions.html#this-parameters)参数的类型，如果函数类型没有参数，则为[未知](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-0.html#new-unknown-top-type)`this`。
+
+```
+function toHex(this: Number) {
+  return this.toString(16);
+}
+ 
+function numberToString(n: ThisParameterType<typeof toHex>) {
+  return toHex.apply(n);
+}
+```
+
+## OmitThisParameter<Type>
+
+从 中删除[`this`](https://www.typescriptlang.org/docs/handbook/functions.html#this-parameters)参数`Type`。如果`Type`没有显式声明`this`的参数，则结果是简单的`Type`。否则，将`this`创建一个没有参数的新函数类型`Type`。泛型被删除，只有最后一个重载签名被传播到新的函数类型中。
+
+```
+function toHex(this: Number) {
+  return this.toString(16);
+}
+ 
+const fiveToHex: OmitThisParameter<typeof toHex> = toHex.bind(5);
+ 
+console.log(fiveToHex());
+```
+
+## ThisType<Type>
+
+此实用程序不返回转换后的类型。相反，它用作上下文[`this`](https://www.typescriptlang.org/docs/handbook/functions.html#this)类型的标记。请注意，[`noImplicitThis`](https://www.typescriptlang.org/tsconfig#noImplicitThis)必须启用该标志才能使用此实用程序。
+
+```
+type ObjectDescriptor<D, M> = {
+  data?: D;
+  methods?: M & ThisType<D & M>; // Type of 'this' in methods is D & M
+};
+ 
+function makeObject<D, M>(desc: ObjectDescriptor<D, M>): D & M {
+  let data: object = desc.data || {};
+  let methods: object = desc.methods || {};
+  return { ...data, ...methods } as D & M;
+}
+ 
+let obj = makeObject({
+  data: { x: 0, y: 0 },
+  methods: {
+    moveBy(dx: number, dy: number) {
+      this.x += dx; // Strongly typed this
+      this.y += dy; // Strongly typed this
+    },
+  },
+});
+ 
+obj.x = 10;
+obj.y = 20;
+obj.moveBy(5, 5);
+```
+
+## 可迭代对象
+
+```
+function toArray<X>(xs: Iterable<X>): X[] {
+  return [...xs]
+}
+```
+
+
