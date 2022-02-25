@@ -1,25 +1,4 @@
-## Rollup 
-
-
-
-## Vite
-
-
-
 ## Webpack
-
-1. webpack相关，提取common chunk，tree shaking是如何实现的
-2. webpack的钩子函数
-3. webpack的生命周期函数
-4. tree shaking，不借助webpack，如何实现treeshaking？
-5. 模块联邦
-
-### loader
-
-1. Style-loader 实现
-2. 简单说一说loader的使用
-
-
 
 本质上,webpack 是一个现代 JavaScript 应用程序的静态模块打包器(module bundler)。当 webpack 处理应用程序时,它会递归地构建一个依赖关系图(dependency graph),其中包含应用程序需要的每个模块,然后将所有这些模块打包成一个或多个 bundle。简单讲，Webpack是一个根据依赖关系来进行构建的工具，而gulp、grunt是一种流水线型的打包工具。
 
@@ -152,5 +131,43 @@ module.exports = {
     // ...
   }
 }
+```
+
+### tree-shaking
+
+- `ES6 Module`引入进行静态分析，故而编译的时候正确判断到底加载了那些模块
+- 静态分析程序流，判断那些模块和变量未被使用或者引用，进而删除对应代码
+
+### webpack的钩子函数
+
+      done: 编译完成后
+      beforeRun: 在编译器执行前
+      run: 在编译器开始读取记录前执行
+      emit: 文件提交到dist目录前
+      afterEmit: 文件提交到dist目录前
+      compilation: 创建compilation后
+      beforeCompile: 在编译前
+      compile: 创建compilation前
+      make:编译完成前
+
+### webpack的生命周期函数
+
+![img](https://img2018.cnblogs.com/blog/757824/201811/757824-20181109172616705-1136565244.jpg)
+
+### Style-loader 实现
+
+```javascript
+module.exports = function (source) {
+    const cssSource = source.match(/(?<=__CSS_SOURCE__)((.|\s)*?)(?=\*\/)/g); //获取 css 资源字符串
+    const classKeyMap = source.match(/(?<=__CSS_classKeyMap__)((.|\s)*?)(?=\*\/)/g); // 获取 css 类名Map
+    let script = `var style = document.createElement('style');
+    style.innerHTML = ${JSON.stringify(cssSource)};
+    document.head.appendChild(style);
+  `;
+    if (classKeyMap !== null) {
+        script += `module.exports = ${classKeyMap}`;
+    }
+    return script;
+};
 ```
 
