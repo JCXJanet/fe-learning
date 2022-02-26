@@ -96,7 +96,7 @@
 3. vue-router实现登录流程，vue-cli打包流程，vue created mounted的区别，vue nextTick
 4. 说说vue路由有哪些模式和区别
 5. vue-router懒加载实现原理
-
+1
 ### 其他
 
 1. 用 betterScroll 用到了里面的什么功能？为什么会选择 betterScroll？
